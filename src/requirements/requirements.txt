@@ -1,0 +1,16 @@
+# Python >= 3.12; rapidobj provides Windows/Linux CPython 3.12-3.14 wheels.
+# Install: python -m pip install -r src/requirements/requirements.txt
+
+# src/obj_reader.py: mesh arrays and native OBJ parsing.
+numpy>=1.26
+rapidobj==0.1.5
+
+# src/spc_reconstruct.py: native spatial queries and sparse connected components.
+scipy>=1.11
+# SPCModel.to_obj: watertight surface reconstruction from oriented Maplet samples.
+pymeshlab==2025.7.post1
+
+# src/gpu_render.py; install a CUDA-enabled PyTorch build for GPU rendering.
+torch>=2.0
+# gpu_render.main writes PNG images.
+pillow>=10
