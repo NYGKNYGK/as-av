@@ -8,22 +8,6 @@
 % 作为我的方法的特点，（闭环的体系，有规划结果）（通用性）
 
 
-% mehtod 
-% 方法框架（不是闭环系统），一张图，突出我干了什么，图中每一个元素和之后的小结相对应
-
-% 强化学习的观测规划系统（把评价指标上的创新点）, 图像的作用评价体系（理论基础），放到强化学习方法里面
-
-
-% 实验
-
-% bennu数据，图片对模型贡献度的评价方法
-% 对照组，不使用强化学习（简单规划）、简单工程条件的强化学习
-% 轨道规划（特殊小天体：67p）
-% 消融实验 我的方法的特点，没有这些的效果会怎么样（做不了实验的就一笔带过）
-% 
-
-
-
 For missions to explore distant small astroids(like NASA's OSIRIS-REx\citep{alasad2021}, ESA's Rosetta\citep{taylor2017rosetta}, JAXA's Hayabusa\citep{fujiwara2006,demura2006}), reliable three-dimensional models is essential throughout multiple scientific tasks. The process of obtaining models with captured photos by equipped optical instruments generates useful quantitative measurements: they support optical navigation, provide the spatial reference for mapping, place local observations within a global geological context, support scientific interpretation and sampling operations. Stereophotoclinometry (SPC)\citep{barnouin2020} is an established approach to extract information from captured obtical images and thus derive models of astroids. It connects pixels of multiple images and illumination status to stereo constraints like elevation and albedo of a specific location, which become integratable and optimizalbe variables.Its practical use across planetary missions demonstrates its value of extrating data in roughly unknow environments with limited informations.
 
 Because the surface topography and albedo are totally or partially unknown before reconstruction, the observation geometry is the only controllable factor that can be used to improve the quality of reconstruction, therefore the quality of modeling depends on both the reconstruction procedure and the observations made available to it. The brightness of a pixel on images depens on not only the surface topography but also the observation geometry(illumination conditions and camera extrinsic parameters). Stereo observations of multiple images constrain the three-dimensional positions of the surface, while photoclinometry estimates local slopes and relative albedo from image brightness; these slopes are integrated into surface elevations with geometric and topographic constraints. Repeatedly imaging a specific area with the same illumination condition may therefore increase its nominal coverage without adequately constraining its elevation\citep{gaskell2023,palmer2022}, which makes observation of low infomation density. This limitation makes the choice of images a scientific determinant of model quality: an observation is valuable insofar as it adds constraints that the existing image set lacks. All above makes observation planning, the outcome of a sequence of operational decisions, an important scientific task for SPC model reconstruction.
