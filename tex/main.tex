@@ -1,34 +1,88 @@
-\documentclass[UTF8,11pt,a4paper]{ctexart}
 
-\usepackage{xcolor}
-\usepackage[margin=25mm]{geometry}
-\usepackage{microtype}
+\documentclass[10pt,twocolumn,letterpaper]{article}
+
+\usepackage{times}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
 \usepackage[numbers,sort&compress]{natbib}
-\usepackage{xurl}
-\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
-\renewcommand{\refname}{References}
-\hypersetup{pdftitle={Remain to be determined}}
-\setlength{\emergencystretch}{2em}
-\setlength{\parskip}{0.3em}
-\linespread{1.04}
+\usepackage[letterpaper,textwidth=6.875in,textheight=8.875in,
+  top=1in,headheight=0pt,headsep=0pt,footskip=0.375in]{geometry}
+\usepackage[format=plain,labelformat=simple,labelsep=period,
+  font={small,rm},labelfont=normalfont,textfont=normalfont,
+  justification=justified,singlelinecheck=true,skip=6pt,
+  compatibility=false]{caption}
+\usepackage[font=footnotesize,skip=3pt,subrefformat=parens]{subcaption}
 
-\title{\textcolor{red}{Remain to be determined}}
+\usepackage{microtype}
+\usepackage{xurl}
+\definecolor{iccvblue}{rgb}{0.21,0.49,0.74}
+\usepackage[pagebackref,breaklinks,colorlinks,allcolors=iccvblue]{hyperref}
+\hypersetup{pdftitle={Remain to be determined}}
+
+% 10 pt body text with a 12 pt baseline and no extra paragraph spacing.
+\linespread{1}
+\setlength{\parindent}{1pc}
+\setlength{\parskip}{0pt}
+\setlength{\columnsep}{0.3125in}
+\setlength{\bibsep}{1pt plus 1pt minus 1pt}
+
+% Heading and title typography, configured without a conference template.
+\makeatletter
+\renewcommand{\@seccntformat}[1]{\csname the#1\endcsname.\hspace{0.5em}}
+\renewcommand{\section}{\@startsection{section}{1}{\z@}
+  {-10pt plus -2pt minus -2pt}{7pt}
+  {\normalfont\fontsize{12}{14.4}\selectfont\bfseries}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}
+  {-8pt plus -2pt minus -2pt}{5pt}
+  {\normalfont\fontsize{11}{13.2}\selectfont\bfseries}}
+\renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{\z@}
+  {-6pt plus -2pt minus -2pt}{3pt}
+  {\normalfont\fontsize{10}{12}\selectfont\bfseries}}
+
+\renewcommand{\@maketitle}{
+  \newpage\null\vskip .375in
+  \begin{center}
+    {\fontsize{14}{16.8}\selectfont\bfseries\@title\par}
+    \ifx\@author\@empty\else
+      \vskip 24pt
+      {\fontsize{12}{14.4}\selectfont\lineskip .5em
+        \begin{tabular}[t]{c}\@author\end{tabular}\par}
+    \fi
+  \end{center}
+  \vskip 12pt
+}
+\renewenvironment{abstract}{
+  \centerline{\fontsize{12}{14.4}\selectfont\bfseries Abstract}
+  \vspace{12pt}\fontsize{10}{12}\selectfont\itshape\noindent\ignorespaces
+}{\par\vspace{12pt}}
+\makeatother
+
+\pagestyle{plain}
+
+\title{Remain to be determined}
 \author{}
 \date{}
-
-
 
 \begin{document}
 \maketitle
 
-\pagestyle{plain}
+% Add the abstract here when it is ready.
+% \begin{abstract}
+% \end{abstract}
+
 \input{sections/1-introduction}
 \input{sections/2-related_work}
 \input{sections/3-method.tex}
+\input{sections/4-experiments.tex}
 
-\clearpage
-\bibliographystyle{unsrtnat}
+{
+\fontsize{9}{10.8}\selectfont
+\bibliographystyle{IEEEtranSN}
 \bibliography{references}
+}
 \end{document}
 
 

@@ -1,0 +1,13 @@
+.tools/
+.research/
+build/
+*.aux
+*.bbl
+*.brf
+*.blg
+*.log
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.pdf
