@@ -16,7 +16,8 @@
   compatibility=false]{caption}
 \usepackage[font=footnotesize,skip=3pt,subrefformat=parens]{subcaption}
 
-\usepackage{microtype}
+% Allow slight glyph expansion to improve justified text in narrow columns.
+\usepackage[stretch=30,shrink=20]{microtype}
 \usepackage{xurl}
 \definecolor{iccvblue}{rgb}{0.21,0.49,0.74}
 \usepackage[pagebackref,breaklinks,colorlinks,allcolors=iccvblue]{hyperref}
@@ -28,6 +29,9 @@
 \setlength{\parskip}{0pt}
 \setlength{\columnsep}{0.3125in}
 \setlength{\bibsep}{1pt plus 1pt minus 1pt}
+
+% Keep normal line spacing without forcing both column bottoms to align.
+\raggedbottom
 
 % Heading and title typography, configured without a conference template.
 \makeatletter
@@ -63,15 +67,19 @@
 \pagestyle{plain}
 
 \title{Remain to be determined}
-\author{}
-\date{}
+\author{name}
+\date{2026.10}
 
 \begin{document}
 \maketitle
 
 % Add the abstract here when it is ready.
-% \begin{abstract}
-% \end{abstract}
+\begin{abstract}
+  xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx 
+  xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx 
+  xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx 
+  xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx xxxxxxx 
+\end{abstract}
 
 \input{sections/1-introduction}
 \input{sections/2-related_work}
