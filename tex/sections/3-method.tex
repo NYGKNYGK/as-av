@@ -1,6 +1,32 @@
 \section{Method}
 \label{sec:method}
 
+
+We develop a deep reinforcement learning framework whose observation planner is based on PointNet~\citep{qi2017pointnet}. As illustrated in Figure~\ref{fig:method-framework}, the framework integrates observation planning, SPC reconstruction, and model accuracy assessment through two cycles: an inference cycle for iterative observation selection and reconstruction, and a reinforcement learning training cycle for updating the planner and critic. The planner uses a point-cloud representation of the reconstructed surface together with regional accuracy information to predict subsequent observation positions. These inputs describe both the current surface geometry and its reconstruction quality, allowing observation priorities to adapt as the model is refined. The framework thereby links observation selection to the objective of obtaining an accurate surface model with fewer acquired images.
+
+In the inference cycle, the planner receives the reconstructed surface model and its associated accuracy information from the preceding round and predicts the camera positions for the next observations. Images are rendered at these positions and supplied as inputs to the SPC modeler. SPC incorporates the rendered images into the reconstruction to produce an updated surface model, whose accuracy is then reassessed. Both the updated model and its accuracy information are returned to the planner as inputs for the next inference round. Repeating this sequence makes each observation plan depend on the latest reconstruction and its remaining modeling needs. In particular, regional accuracy feedback allows subsequent observations to target poorly constrained surface regions and add information that is insufficiently represented in the existing observations.
+
+In the reinforcement learning training cycle, the camera positions predicted by the planner are also passed to the inference critic model, which evaluates the proposed observations. After the corresponding rendered images have been processed by SPC, the increment in model accuracy is computed relative to the reconstruction before these observations were incorporated. This increment measures the contribution of the current planning decision to reconstruction quality. The critic's output and the accuracy increment are combined to construct the reward, which is used to update the parameters of both the planner and the critic. Through repeated planning, reconstruction, assessment, and parameter updates, the planner learns to select observations that improve the reconstructed surface, while the critic is trained using the same reward feedback. The two cycles thus connect observation selection and learning to the reconstruction outcomes, supporting the goal of reducing image acquisition while maintaining the required model accuracy.
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=\textwidth]{figures/method-framework/method-framework.pdf}
+    \caption{Overview of the proposed framework. Clipped-corner cards denote processing modules, and capsules denote data and feedback quantities. Blue identifies the inference components and orange identifies the training components. The planner (purple) and model assessment (green) participate in both cycles. The observation planner specifies observations for rendering. In the inference cycle, rendered images are processed by the SPC modeler, and the resulting model and its accuracy are fed back to the planner. In the training cycle, the planner's predictions are also evaluated by the inference critic; its output and the increment in model accuracy form a reward used to update both the planner and critic.}
+    \label{fig:method-framework}
+\end{figure*}
+
+\subsection{Inference Cycle}
+SPC Modeling accuracy 
+
+Input Output planner
+
+\subsection{Training Cycle}
+Image effectiveness evaluation
+
+Reward
+
+Reinforcement learning method
+
 % mehtod 
 % 方法框架（不是闭环系统），一张图，突出我干了什么，图中每一个元素和之后的小结相对应
 
