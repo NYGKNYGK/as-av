@@ -10,4 +10,4 @@ build/
 *.synctex.gz
 *.fls
 *.fdb_latexmk
-*.pdf
+./*.pdf
