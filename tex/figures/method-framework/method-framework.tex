@@ -112,13 +112,13 @@
   (planner) at (0,0)
   {\mbox{PointNet-Based}\\Observation Planner};
 \node[module,tone=inference] (modeler) at (0,4.2) {SPC Modeler};
-\node[module,tone=training] (critic) at (6,-2.5) {Inference Critic};
+\node[module,tone=training] (critic) at (0,-4.2) {Inference Critic};
 
 % Flat capsules retain straight sides and avoid oversized elliptical outlines.
 \node[data,tone=modelaccent,minimum width=4.8cm,minimum height=1.5cm]
   (model) at (-6,2.25) {SPC Model \&\\Model Accuracy};
 \node[data,tone=inference] (images) at (6,2.25) {Images};
-\node[data,tone=training] (reward) at (-6,-2.5) {Reward};
+\node[data,tone=training] (reward) at (-6,-4.2) {Reward};
 
 % Render sits to the right of the vertical planner-to-images segment.
 % The unmarked bend also supplies the training critic.
@@ -135,13 +135,12 @@
   -- (-3.35,2.25) -- (-3.35,0.38)
   -- ([yshift=3.8mm]planner.west);
 
-% Training: the critic and model accuracy supply reward feedback.
-\draw[training flow] (render) -- (critic.north);
-\draw[training flow] (critic.south)
-  -- (6,-4.2) -- (-6,-4.2) -- (reward.south);
+% Training: reward feedback reaches the planner through the critic.
+\draw[training flow] (render) |- (critic.east);
 \draw[training flow] (model.south) -- (reward.north);
-\draw[training flow] (reward.east)
-  -- (-3.35,-2.5) -- (-3.35,-0.38)
+\draw[training flow] (reward.east) -- (critic.west);
+\draw[training flow] ([yshift=3.8mm]critic.west)
+  -- (-3.35,-3.82) -- (-3.35,-0.38)
   -- ([yshift=-3.8mm]planner.west);
 
 % Circular direction markers surround the labels in the two open centers.
@@ -149,7 +148,7 @@
 \coordinate (inference-cycle) at (0,2.25);
 \drawcycle{inference-cycle}{inference}{Inference}{1}
 
-\coordinate (training-cycle) at (0,-2.5);
+\coordinate (training-cycle) at (0,-2.25);
 \drawcycle{training-cycle}{training}{Training}{-1}
 
 \end{tikzpicture}
