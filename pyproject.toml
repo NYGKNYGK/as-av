@@ -1,0 +1,40 @@
+[project]
+name = "as-nav"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "NYGK", email = "nygknygk@gmail.com" }
+]
+requires-python = ">=3.15"
+dependencies = [
+    "filelock==3.32.3",
+    "fsspec==2026.7.0",
+    "jinja2==3.1.6",
+    "markupsafe==2.1.5",
+    "mpmath==1.3.0",
+    "networkx==3.6.1",
+    "numpy==2.5.2",
+    "pillow==12.3.0",
+    "setuptools==78.1.0",
+    "sympy==1.14.0",
+    "torch==2.14.1+cu132",
+    "torchvision==0.29.1+cu132",
+    "typing-extensions==4.16.0",
+]
+
+[project.scripts]
+as-nav = "as_nav:main"
+
+[build-system]
+requires = ["uv_build>=0.13.0,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu132" }
+torchvision = { index = "pytorch-cu132" }
+
+[[tool.uv.index]]
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
+explicit = true
