@@ -1,155 +1,444 @@
-% Editable vector source. From the tex directory, rebuild with:
-% pdflatex -interaction=nonstopmode -halt-on-error -output-directory=figures/method-framework figures/method-framework/method-framework.tex
+% Editable scientific overview. Surface uncertainty follows ../surface-uncertainty/;
+% PointNet++ structure follows ../actor/; numeric layer settings are omitted.
+% From tex/: pdflatex -interaction=nonstopmode -halt-on-error -output-directory=figures/method-framework figures/method-framework/method-framework.tex
+% From this directory: pdflatex -interaction=nonstopmode -halt-on-error method-framework.tex
 \documentclass[tikz,border=3mm]{standalone}
 \usepackage[T1]{fontenc}
-\usepackage{helvet}
-\renewcommand{\familydefault}{\sfdefault}
-\usetikzlibrary{arrows.meta,calc,shapes.misc}
-
-\definecolor{ink}{HTML}{23374D}
-\definecolor{inference}{HTML}{287F94}
-\definecolor{training}{HTML}{C58539}
-\definecolor{planneraccent}{HTML}{79659A}
-\definecolor{modelaccent}{HTML}{698770}
-
-% A hollow block head joins the two shaft outlines without a crossbar.
-% Keep these dimensions in sync with flow: 3 pt interior + 0.8 pt borders.
-\pgfdeclarearrow{
-  name=HollowBlock,
-  setup code={
-    \pgfarrowssettipend{0.7pt}
-    \pgfarrowssetbackend{-9pt}
-    \pgfarrowssetlineend{-9pt}
-    \pgfarrowshullpoint{0pt}{0pt}
-    \pgfarrowshullpoint{-9pt}{6pt}
-    \pgfarrowshullpoint{-9pt}{-6pt}
-  },
-  drawing code={
-    \pgfsetlinewidth{0.8pt}
-    \pgfsetinnerlinewidth{0pt}
-    \pgfsetmiterjoin
-    \pgfsetbuttcap
-    \pgfsetfillcolor{white}
-    \pgfpathmoveto{\pgfpoint{-9pt}{2.3pt}}
-    \pgfpathlineto{\pgfpoint{-9pt}{6pt}}
-    \pgfpathlineto{\pgfpoint{0pt}{0pt}}
-    \pgfpathlineto{\pgfpoint{-9pt}{-6pt}}
-    \pgfpathlineto{\pgfpoint{-9pt}{-2.3pt}}
-    \pgfusepathqfillstroke
-  }
+\usepackage{amsmath,amssymb}
+\usepackage{newtxtext,newtxmath}
+\usetikzlibrary{arrows.meta,calc}
+\definecolor{ink}{HTML}{233243}
+\definecolor{muted}{HTML}{566774}
+\definecolor{blue}{HTML}{347DA6}
+\definecolor{teal}{HTML}{268B83}
+\definecolor{purple}{HTML}{7C65A3}
+\definecolor{orange}{HTML}{BF8531}
+\definecolor{green}{HTML}{6A9F65}
+\definecolor{amberline}{HTML}{DFC497}
+\definecolor{bluebg}{HTML}{E3F2FC}
+\definecolor{blueline}{HTML}{9AC4E1}
+% Cycle backgrounds: blue inference and amber training; their multiplicative
+% overlap is precomputed so the PDF remains consistent across renderers.
+\definecolor{inferencebg}{HTML}{DDF0FC}
+\definecolor{trainingbg}{HTML}{FFF0D0}
+\definecolor{sharedbg}{HTML}{DDE2CE}
+\definecolor{sharedline}{HTML}{A6B68D}
+\IfFileExists{figures/method-framework/method-framework-body.tex}
+  {\input{figures/method-framework/method-framework-body.tex}}
+  {\input{method-framework-body.tex}}
+\newcommand{\subpanel}[6]{%
+  \path[draw=#5!35,fill=white,fill opacity=.70,draw opacity=1,
+    rounded corners=2.7mm,line width=.85pt] (#1,#2) rectangle (#3,#4);
+  \node[subhead,anchor=west] at ({#1+.25},{#4-.43}) {#6};
 }
-\pgfdeclarearrow{
-  name=HollowTail,
-  setup code={
-    \pgfarrowssettipend{0pt}
-    \pgfarrowssetbackend{0pt}
-    \pgfarrowssetlineend{0pt}
-  },
-  drawing code={
-    \pgfsetlinewidth{0.8pt}
-    \pgfsetinnerlinewidth{0pt}
-    \pgfsetbuttcap
-    \pgfpathmoveto{\pgfpoint{0pt}{-2.3pt}}
-    \pgfpathlineto{\pgfpoint{0pt}{2.3pt}}
-    \pgfusepathqstroke
-  }
+\newcommand{\op}[6]{%
+  \node[draw=#5!40,fill=#5!6,rounded corners=1.1mm,
+    minimum width=#3cm,minimum height=#4cm,text width={#3cm-3mm},
+    align=center,inner sep=1.2mm,font=\fontsize{14}{17}\selectfont]
+    at (#1,#2) {#6};
 }
-
-% Matched direction rings: a faint track and a gradually strengthening arc.
-% Arguments: center coordinate, cycle color, label, direction (+1 or -1).
-\newcommand{\drawcycle}[4]{%
-  \draw[draw=#2!12,line width=0.8pt] (#1) circle[radius=1.08cm];
-  \foreach \segment in {0,...,17} {
-    \pgfmathsetmacro{\arcstart}{#4*(40+14*\segment)}
-    \pgfmathsetmacro{\arcend}{#4*(40+14*(\segment+1)+0.3)}
-    \pgfmathtruncatemacro{\arctint}{18+4*\segment}
-    \draw[cycle stroke,draw=#2!\arctint]
-      ($(#1)+(\arcstart:1.08cm)$)
-      arc[start angle=\arcstart,end angle=\arcend,radius=1.08cm];
-  }
-  \pgfmathsetmacro{\headstart}{#4*292}
-  \pgfmathsetmacro{\headend}{#4*332}
-  \draw[cycle arrow,draw=#2]
-    ($(#1)+(\headstart:1.08cm)$)
-    arc[start angle=\headstart,end angle=\headend,radius=1.08cm];
-  \node[cycle label,text=#2!85!black] at (#1) {#3\\cycle};
+\newcommand{\uncbar}[3]{%
+  \shade[left color=unc0,middle color=unc20,right color=unc40]
+    (#1,#2) rectangle ({#1+#3},{#2+.16});
 }
-
+\newcommand{\cameraicon}[3]{%
+  \begin{scope}[shift={(#1,#2)},rotate=#3]
+    \path[draw=orange!90!black,fill=orange!25,line width=.7pt,rounded corners=.3mm]
+      (-.27,-.15) rectangle (.07,.15);
+    \path[draw=orange!90!black,fill=orange!12,line width=.7pt]
+      (.07,-.10)--(.25,-.20)--(.25,.20)--(.07,.10)--cycle;
+    \draw[orange!55,line width=.5pt] (.25,-.20)--(.65,-.35);
+    \draw[orange!55,line width=.5pt] (.25,.20)--(.65,.35);
+  \end{scope}
+}
 \begin{document}
 \begin{tikzpicture}[
-  font=\sffamily,
-  card/.style={
-    line width=0.85pt, align=center,
-    font=\fontsize{11.5}{14}\selectfont\bfseries,
-    text=ink,outer sep=0.6pt
-  },
-  tone/.style={draw=#1,fill=#1!9,text=#1!75!black},
-  module/.style={card,chamfered rectangle,
-    chamfered rectangle corners={north east,south west},
-    chamfered rectangle xsep=2mm,chamfered rectangle ysep=2mm,
-    minimum width=4.1cm,minimum height=1.3cm,
-    text width=3.3cm,inner xsep=4mm,inner ysep=3mm},
-  data/.style={card,rounded rectangle,
-    rounded rectangle arc length=180,
-    minimum width=3cm,minimum height=1.15cm,
-    inner xsep=1.5mm,inner ysep=2mm},
-  flow/.style={line width=0.8pt,double=white,double distance=3pt,
-    line cap=butt,line join=round,rounded corners=1.3mm,
-    shorten <=0.8mm,shorten >=0.8mm,
-    arrows={HollowTail-HollowBlock}},
-  inference flow/.style={flow,draw=inference},
-  training flow/.style={flow,draw=training},
-  cycle stroke/.style={line width=1.65pt,line cap=round},
-  cycle arrow/.style={cycle stroke,
-    -{Stealth[length=2.8mm,width=2.25mm,round]}},
-  cycle label/.style={font=\fontsize{10.5}{13}\selectfont\bfseries,
-    align=center}
+  x=1cm,y=1cm,text=ink,font=\fontsize{14}{17}\selectfont,
+  title/.style={font=\fontsize{21}{24}\selectfont\bfseries,align=center},
+  subhead/.style={font=\fontsize{15}{18}\selectfont\bfseries},
+  label/.style={font=\fontsize{14}{17}\selectfont,align=center},
+  small/.style={font=\fontsize{12.5}{15}\selectfont,align=center,text=muted},
+  equation/.style={font=\fontsize{16}{20}\selectfont,align=center},
+  innerflow/.style={-{Stealth[length=2.3mm,width=1.9mm]},line width=.8pt,draw=ink!75},
+  fineflow/.style={-{Stealth[length=1.8mm,width=1.5mm]},line width=.65pt,draw=muted},
+  inference flow/.style={-{Stealth[length=3.8mm,width=3.0mm]},
+    line width=1.8pt,draw=teal,rounded corners=2mm},
+  training flow/.style={-{Stealth[length=3.8mm,width=3.0mm]},
+    line width=1.8pt,draw=orange,rounded corners=2mm},
+  state flow/.style={-{Stealth[length=2.8mm,width=2.2mm]},
+    draw=purple,line width=1.1pt,dashed,rounded corners=1.3mm,
+    preaction={draw=white,line width=3.5pt,solid}}
 ]
+% The model and planner belong to both cycle regions. Subpanels sit above
+% these backgrounds, so the overlap never tints text, illustrations or arrows.
+\def\inferencearea{(-.55,9.00) rectangle (38.00,34.75)}
+\def\trainingarea{(-.55,-.40) rectangle (38.00,28.65)}
+\path[fill=inferencebg,rounded corners=5mm] \inferencearea;
+\path[fill=trainingbg,rounded corners=5mm] \trainingarea;
+\begin{scope}
+  \clip[rounded corners=5mm] \inferencearea;
+  \path[fill=sharedbg,rounded corners=5mm] \trainingarea;
+\end{scope}
+\draw[draw=blue!40,line width=1.1pt,rounded corners=5mm] \inferencearea;
+\draw[draw=orange!40,line width=1.1pt,rounded corners=5mm] \trainingarea;
+\node[small,text=green!65!black] at (25.9,28.32) {Shared by both cycles};
 
-% Compact processing cards; color identifies each cycle or shared component.
-\node[module,tone=planneraccent,fill=planneraccent,text=white,
-  text width=4.1cm,minimum width=4.9cm,minimum height=1.65cm]
-  (planner) at (0,0)
-  {\mbox{PointNet-Based}\\Observation Planner};
-\node[module,tone=inference] (modeler) at (0,4.2) {SPC Modeler};
-\node[module,tone=training] (critic) at (0,-4.2) {Inference Critic};
+% Inference: predicted positions -> images -> SPC -> model and uncertainty.
+\path[fill=white,fill opacity=.35,draw=blueline,line width=1.2pt,rounded corners=4mm]
+  (0,29.0) rectangle (14.2,34.1);
+\node[title] at (7.1,33.52) {SPC Modeler};
+\foreach \xa/\xb/\xc/\name in {
+  .40/4.60/2.50/{Registration},
+  5.00/9.20/7.10/{Photometric slopes},
+  9.60/13.80/11.70/{Height integration}} {
+  \path[draw=blueline!65,fill=white!65!bluebg,rounded corners=2mm]
+    (\xa,29.45) rectangle (\xb,32.85);
+  \node[font=\fontsize{14.5}{17}\selectfont\bfseries,align=center]
+    at (\xc,32.40) {\name};
+}
+% Correspondence, lighting and elevation illustrations.
+\draw[blue!70,fill=blue!5] (.95,30.20) rectangle (2.40,31.65);
+\draw[blue!70,fill=white] (2.62,30.40) rectangle (4.07,31.85);
+\foreach \x/\y in {1.25/30.60,1.80/31.20,2.10/30.90} {
+  \draw[blue!45,dashed] (\x,\y)--({\x+1.67},{\y+.20});
+  \fill[orange] (\x,\y) circle[radius=.065];
+  \fill[orange] ({\x+1.67},{\y+.20}) circle[radius=.065];
+}
+\node[small] at (2.50,29.77) {tie points + poses};
+\draw[teal,line width=1.2pt] (5.60,30.33)--(8.53,31.06);
+\draw[innerflow,draw=teal] (7.07,30.70)--(6.65,31.78);
+\node[small,text=teal] at (6.46,31.76) {$\mathbf n$};
+\fill[orange!70] (8.15,31.80) circle[radius=.19];
+\foreach \angle in {0,45,...,315} {
+  \draw[orange] ($(8.15,31.80)+(\angle:.25)$)--($(8.15,31.80)+(\angle:.36)$);
+}
+\draw[fineflow,draw=orange] (7.84,31.63)--(7.29,31.01);
+\node[small] at (7.1,29.77) {lighting + slopes};
+\begin{scope}[shift={(11.7,30.85)},scale=.90]\BodyMesh\end{scope}
+\node[small] at (11.7,29.77) {height + albedo};
+\draw[innerflow] (4.64,31.05)--(4.96,31.05);
+\draw[innerflow] (9.24,31.05)--(9.56,31.05);
 
-% Flat capsules retain straight sides and avoid oversized elliptical outlines.
-\node[data,tone=modelaccent,minimum width=4.8cm,minimum height=1.5cm]
-  (model) at (-6,2.25) {SPC Model \&\\Model Accuracy};
-\node[data,tone=inference] (images) at (6,2.25) {Images};
-\node[data,tone=training] (reward) at (-6,-4.2) {Reward};
+\path[fill=white,fill opacity=.35,draw=blueline,line width=1.2pt,rounded corners=4mm]
+  (25.2,29.0) rectangle (36,34.1);
+\node[title] at (30.6,33.52) {Small-Body Images};
+\begin{scope}[shift={(25.85,30.00)},scale=.69]\BodyPhoto{A}\end{scope}
+\begin{scope}[shift={(29.10,30.00)},scale=.69]\BodyPhoto{B}\end{scope}
+\begin{scope}[shift={(32.35,30.00)},scale=.69]\BodyPhoto{C}\end{scope}
+\node[small] at (27.0,29.62) {$I_1$};
+\node[small] at (30.25,29.62) {$I_2$};
+\node[small] at (33.50,29.62) {$I_K$};
+\node[small] at (35.32,31.15) {$\cdots$};
+\draw[inference flow] (25.12,32.45)--node[above=2mm,label] {new observations} (14.28,32.45);
+\node[title,text=teal!85!black] at (19.7,30.55) {Inference cycle};
+\node[small] at (19.7,29.87) {Observation + reconstruction};
+\draw[inference flow] (7.1,28.92)--(7.1,27.88);
+\node[small,anchor=west,inner sep=1pt] at (7.38,28.40) {updated reconstruction};
 
-% Render sits to the right of the vertical planner-to-images segment.
-% The unmarked bend also supplies the training critic.
-\coordinate (render) at (6,0);
-\draw[inference flow] (planner.east)
-  -- (render)
-  -- node[midway,right=3.2mm,font=\fontsize{10.5}{12}\selectfont,
-    text=inference!75!black] {Render} (images.south);
+% Model and uncertainty are data products supplied to the other modules.
+% These parallel data views share one surface and one current uncertainty state;
+% they do not describe reconstruction steps or a before/after update sequence.
+\begin{scope}[
+  data label/.style={label,text width=5.8cm,inner sep=0pt},
+  data note/.style={small,font=\fontsize{11.5}{14}\selectfont,
+    text width=5.8cm,inner sep=0pt},
+  data image/.style={fill=blue!3,draw=blue!13,line width=.5pt,rounded corners=1.5mm}
+]
+\path[fill=white,fill opacity=.25,draw=sharedline,line width=1.3pt,rounded corners=5mm]
+  (0,9.4) rectangle (14.2,27.8);
+\node[title] at (7.1,27.13) {SPC Model \& Model Uncertainty};
+\subpanel{.45}{21.05}{13.75}{26.15}{green}{Surface geometry and albedo}
+% Matching columns keep every image, caption and legend inside its subpanel.
+\draw[green!22,line width=.6pt] (7.10,21.40)--(7.10,25.15);
+\foreach \xa/\xb in {1.00/6.44,7.66/13.10}
+  \path[data image] (\xa,22.65) rectangle (\xb,25.00);
+\begin{scope}[shift={(3.72,23.82)},scale=1.15]\BodyMesh\end{scope}
+\begin{scope}[shift={(10.38,23.82)},scale=1.15]\BodyDraw{A}{2}\end{scope}
+\node[data label] at (3.72,22.18) {Small-body shape model};
+\node[data note] at (3.72,21.55) {Body-frame positions and heights};
+\node[data label] at (10.38,22.18) {Surface albedo};
+\draw[blue,line width=1.2pt] (8.60,21.55) circle[radius=.12];
+\node[small,font=\fontsize{11.5}{14}\selectfont,anchor=west,inner sep=0pt]
+  at (8.88,21.55) {ridge};
+\draw[orange,line width=1.2pt] (10.53,21.43) rectangle ++(.24,.24);
+\node[small,font=\fontsize{11.5}{14}\selectfont,anchor=west,inner sep=0pt]
+  at (10.93,21.55) {boulder};
 
-% Inference: planner -> images -> SPC -> model/accuracy -> planner.
-\draw[inference flow] (images.north) |- (modeler.east);
-\draw[inference flow] (modeler.west) -| (model.north);
-\draw[inference flow] (model.east)
-  -- (-3.35,2.25) -- (-3.35,0.38)
-  -- ([yshift=3.8mm]planner.west);
+\subpanel{.45}{14.55}{13.75}{20.65}{green}{Model uncertainty at each surface point}
+\draw[green!22,line width=.6pt] (7.10,14.90)--(7.10,19.60);
+\node[data label] at (3.72,19.40) {Uncertainty map};
+\node[data label] at (10.38,19.40) {Height uncertainty band};
+\foreach \xa/\xb in {1.00/6.44,7.66/13.10}
+  \path[data image] (\xa,16.65) rectangle (\xb,18.97);
+\begin{scope}[shift={(3.72,17.81)},scale=1.10]\BodyDraw{A}{3}\end{scope}
+\begin{scope}[shift={(7.95,16.85)},xscale=.94,yscale=1.08]\BodyProfile\end{scope}
+\uncbar{1.60}{16.02}{4.24}
+\node[small,font=\fontsize{11}{13}\selectfont,anchor=west,inner sep=0pt]
+  at (1.60,15.72) {low};
+\node[small,font=\fontsize{11}{13}\selectfont,anchor=east,inner sep=0pt]
+  at (5.84,15.72) {high};
+\node[data note] at (3.72,15.10) {Color: height uncertainty};
+\node[data note] at (10.38,16.06) {Ridge--boulder surface path};
+\node[data note] at (10.38,15.10) {Band: plausible height range};
 
-% Training: reward feedback reaches the planner through the critic.
-\draw[training flow] (render) |- (critic.east);
-\draw[training flow] (model.south) -- (reward.north);
-\draw[training flow] (reward.east) -- (critic.west);
-\draw[training flow] ([yshift=3.8mm]critic.west)
-  -- (-3.35,-3.82) -- (-3.35,-0.38)
-  -- ([yshift=-3.8mm]planner.west);
+\subpanel{.45}{9.85}{13.75}{14.15}{green}{Shared points and correlated height errors}
+\draw[green!22,line width=.6pt] (7.10,10.12)--(7.10,13.36);
+\node[label,font=\fontsize{12.5}{15}\selectfont\bfseries,
+  text width=6.05cm,inner sep=0pt] at (3.72,13.07)
+  {Same points across maps};
+\begin{scope}[shift={(2.00,11.80)},scale=.68]\BodyMesh\end{scope}
+\begin{scope}[shift={(5.45,11.80)},scale=.68]\BodyDraw{A}{3}\end{scope}
+% Correspondence lines use the very same landmark coordinates as the maps.
+\foreach \rx/\ry/\bx/\by in \BodyMarksA {
+  \foreach \name/\cx in {geometry/2.00,uncertainty/5.45} {
+    \coordinate (\name-ridge) at ({\cx+.68*\rx},{11.80+.68*\ry});
+    \coordinate (\name-boulder) at ({\cx+.68*\bx},{11.80+.68*\by});
+  }
+  \draw[orange,line width=1.1pt,rounded corners=.8mm]
+    (geometry-boulder)--(geometry-boulder |- 0,12.52)
+    --(uncertainty-boulder |- 0,12.52)--(uncertainty-boulder);
+  \draw[blue,line width=1.1pt,rounded corners=.8mm]
+    (geometry-ridge)--(geometry-ridge |- 0,10.99)
+    --(uncertainty-ridge |- 0,10.99)--(uncertainty-ridge);
+  \foreach \name in {geometry,uncertainty} {
+    \draw[blue,fill=white,line width=1.1pt] (\name-ridge) circle[radius=.095];
+    \draw[orange,fill=white,line width=1.1pt]
+      ($(\name-boulder)-(.09,.09)$) rectangle ++(.18,.18);
+  }
+}
+\node[small,text=orange!85!black,font=\fontsize{11}{13}\selectfont] at (3.72,12.28) {boulder};
+\node[small,text=blue,font=\fontsize{11}{13}\selectfont] at (4.14,11.22) {ridge};
+\node[small,font=\fontsize{11.5}{14}\selectfont] at (2.00,10.64) {Geometry};
+\node[small,font=\fontsize{11.5}{14}\selectfont] at (5.45,10.64) {Uncertainty};
+\node[data note,font=\fontsize{11}{13}\selectfont] at (3.72,10.22)
+  {Lines join the same surface point.};
 
-% Circular direction markers surround the labels in the two open centers.
-% Inference turns counterclockwise; training turns clockwise.
-\coordinate (inference-cycle) at (0,2.25);
-\drawcycle{inference-cycle}{inference}{Inference}{1}
+\node[label,font=\fontsize{12.5}{15}\selectfont\bfseries,
+  text width=6.05cm,inner sep=0pt] at (10.38,13.07)
+  {One reference for both heights};
+% Both height measurements explicitly start from one connected reference.
+\draw[purple!12,line width=10pt] (8.05,10.93)--(12.70,10.93);
+\draw[purple,line width=1.2pt] (8.05,10.93)--(12.70,10.93);
+\draw[purple!75,dashed,line width=.9pt] (8.05,11.30)--(12.70,11.30);
+\foreach \xx/\yy/\col in {8.877/12.374/blue,11.613/12.706/orange} {
+  \draw[\col!75,line width=.85pt,-{Stealth[length=1.8mm]}]
+    (\xx,10.93)--(\xx,{\yy-.10});
+  \draw[purple,line width=1.2pt,-{Stealth[length=1.8mm]}]
+    ({\xx+.28},10.94)--({\xx+.28},11.30);
+}
+\begin{scope}[shift={(7.72,11.47)}]
+  \draw[blue!65!black,line width=1.1pt] \BodyProfileLine;
+  \BodyProfileMarks
+\end{scope}
+\node[small,text=purple!90!black,font=\fontsize{11}{13}\selectfont]
+  at (10.36,11.54) {same offset};
+\node[small,text=purple!90!black,font=\fontsize{11.5}{14}\selectfont\bfseries]
+  at (10.38,10.62) {Shared height reference};
+\node[data note,font=\fontsize{11}{13}\selectfont] at (10.38,10.22)
+  {Reference error affects both heights.};
+\end{scope}
 
-\coordinate (training-cycle) at (0,-2.25);
-\drawcycle{training-cycle}{training}{Training}{-1}
+% Planner: describe the representation and operations visually, without hyperparameters.
+\path[fill=white,fill opacity=.25,draw=sharedline,line width=1.3pt,rounded corners=5mm]
+  (15.8,9.4) rectangle (36,27.8);
+\node[title] at (25.9,27.13) {PointNet-Based Observation Planner};
+\node[label,text=muted] at (25.9,26.52)
+  {PointNet++ actor: geometry + uncertainty $\longrightarrow$ camera extrinsics};
+\subpanel{16.25}{22.20}{35.55}{25.95}{green}{Surface geometry and uncertainty features}
+\begin{scope}[shift={(18.20,23.80)},scale=.88]\BodyMesh\end{scope}
+\node[small] at (18.20,22.65) {Small-body model};
+\node[equation,text=teal] at (20.10,23.85) {$+$};
+\begin{scope}[shift={(21.05,23.05)},scale=.47]\BodyUncertainty\end{scope}
+\node[small] at (21.83,22.65) {Height uncertainty};
+\draw[innerflow,draw=teal] (23.0,23.80)--(24.10,23.80);
+\op{26.45}{23.80}{4.40}{1.75}{teal}
+  {\textbf{Normalize}\\[3pt]Align points and\\uncertainty}
+\draw[innerflow,draw=teal] (28.73,23.80)--(30.00,23.80);
+\node[label,font=\fontsize{14}{17}\selectfont\bfseries] at (32.25,24.91) {Point-wise features};
+\foreach \x/\lab in {30.95/x,31.70/y,32.45/z,33.20/\sigma_h}
+  \node[small] at (\x,24.36) {$\lab$};
+\foreach \row in {0,...,3} {
+  \foreach \col in {0,...,2} {
+    \pgfmathtruncatemacro{\tone}{25+12*mod(\row+2*\col,5)}
+    \path[fill=blue!\tone,draw=white,line width=.5pt]
+      ({30.68+.75*\col},{22.98+.30*\row}) rectangle ++(.55,.25);
+  }
+  \pgfmathtruncatemacro{\tone}{35+14*\row}
+  \path[fill=orange!\tone,draw=white,line width=.5pt]
+    (32.93,{22.98+.30*\row}) rectangle ++(.55,.25);
+}
+\node[small] at (32.05,22.60) {geometry + uncertainty};
 
+\subpanel{16.25}{15.75}{35.55}{21.80}{green}{Hierarchical PointNet++ encoder}
+\foreach \xa/\xb/\xc/\kind in {
+  16.55/22.35/19.45/Local,22.95/28.75/25.85/Regional,29.35/35.15/32.25/Global} {
+  \path[fill=blue!4,draw=blue!30,rounded corners=2mm,line width=.8pt]
+    (\xa,16.30) rectangle (\xb,20.98);
+  \path[fill=blue!12,rounded corners=2mm] (\xa,20.14) rectangle (\xb,20.98);
+  \node[font=\fontsize{16}{19}\selectfont\bfseries,text=blue!85!black]
+    at (\xc,20.56) {\kind\ features};
+}
+\node[label] at (19.45,19.55) {Sample and group points};
+\fill[blue!7] (19.45,18.35) circle[radius=.83];
+\draw[blue!60,dashed] (19.45,18.35) circle[radius=.83];
+\foreach \dx/\dy in {-.65/.2,-.45/-.5,-.25/.48,.1/-.34,.37/.48,.60/-.18,-.12/-.05,.27/.08}
+  \fill[teal] ({19.45+\dx},{18.35+\dy}) circle[radius=.065];
+\foreach \dx/\dy in {-1.10/.40,1.12/.55,1.05/-.47,-.92/-.65}
+  \fill[blue!30] ({19.45+\dx},{18.35+\dy}) circle[radius=.05];
+\filldraw[orange,draw=white,line width=.6pt] (19.45,18.35) circle[radius=.09];
+\node[label] at (19.45,17.18) {Shared point features};
+\node[small] at (19.45,16.62) {Neighborhood feature pooling};
+
+\node[label] at (25.85,19.55) {Group neighborhoods};
+\foreach \x/\y in {24.60/18.30,25.85/18.72,27.10/18.30} {
+  \draw[blue!40,fill=blue!7] (\x,\y) circle[radius=.45];
+  \foreach \dx/\dy in {-.24/.10,.05/.25,.22/-.12,-.12/-.25}
+    \fill[teal!75] ({\x+\dx},{\y+\dy}) circle[radius=.055];
+  \fill[orange] (\x,\y) circle[radius=.07];
+}
+\draw[innerflow,draw=blue] (25.05,18.30)--(25.85,17.90);
+\draw[innerflow,draw=blue] (26.65,18.30)--(25.85,17.90);
+\fill[purple!75] (25.85,17.90) circle[radius=.10];
+\node[label] at (25.85,17.18) {Aggregate local structure};
+\node[small] at (25.85,16.62) {Regional feature pooling};
+
+\node[label] at (32.25,19.55) {Encode surface context};
+\begin{scope}[shift={(31.00,18.35)},scale=.62]\BodyMesh\end{scope}
+\draw[innerflow,draw=blue] (31.92,18.35)--(32.53,18.35);
+\foreach \row in {0,...,3} \foreach \col in {0,...,2} {
+  \pgfmathtruncatemacro{\tone}{30+11*mod(\row+\col,5)}
+  \fill[purple!\tone] ({32.77+.32*\col},{17.82+.29*\row}) rectangle ++(.25,.23);
+}
+\node[label] at (32.25,17.18) {Fuse shape + uncertainty};
+\node[small] at (32.25,16.62) {Global feature pooling};
+\draw[innerflow,draw=blue] (22.40,16.65)--(22.65,16.65)--(22.65,19.55)--(22.90,19.55);
+\draw[innerflow,draw=blue] (28.80,16.65)--(29.05,16.65)--(29.05,19.55)--(29.30,19.55);
+\node[small] at (25.9,16.00)
+  {Shared point features are pooled from local neighborhoods to global context.};
+\draw[innerflow,draw=green!80!black] (31.95,22.15)--(31.95,21.98)--(19.45,21.98)--(19.45,21.84);
+
+\subpanel{16.25}{9.85}{35.55}{15.35}{green}{Joint decoding of camera extrinsics}
+\op{18.25}{13.55}{3.00}{1.05}{purple}{Global\\descriptor}
+\op{22.05}{13.55}{3.00}{1.05}{purple}{Shared\\decoder}
+\op{25.85}{13.55}{3.00}{1.05}{purple}{Pose\\regression}
+\draw[innerflow,draw=purple] (19.83,13.55)--(20.47,13.55);
+\draw[innerflow,draw=purple] (23.63,13.55)--(24.27,13.55);
+\foreach \col in {0,...,5} {
+  \pgfmathtruncatemacro{\tone}{30+10*\col}
+  \fill[purple!\tone] ({17.25+.34*\col},11.72) rectangle ++(.25,.56);
+}
+\foreach \xa/\xb in {21.15/22.05,22.05/22.95}
+  \foreach \ya in {11.50,11.95,12.40}
+    \foreach \yb in {11.50,11.95,12.40}
+      \draw[purple!35,line width=.45pt] (\xa,\ya)--(\xb,\yb);
+\foreach \x in {21.15,22.05,22.95}
+  \foreach \y in {11.50,11.95,12.40}
+    \filldraw[fill=purple!30,draw=purple!70] (\x,\y) circle[radius=.10];
+\draw[innerflow,draw=blue] (25.50,11.70)--(26.60,11.70);
+\draw[innerflow,draw=teal] (25.50,11.70)--(25.50,12.55);
+\draw[innerflow,draw=orange] (25.50,11.70)--(24.95,11.25);
+\node[small] at (26.75,11.70) {$x$};
+\node[small] at (25.50,12.73) {$z$};
+\node[small] at (24.79,11.13) {$y$};
+\node[small,text width=10.4cm] at (21.8,10.55)
+  {Decode observation poses jointly from the surface representation.};
+\foreach \x/\y/\angle in {
+  28.75/13.48/-26,32.40/14.03/-122,34.40/12.47/-176,
+  33.25/10.98/146,28.83/11.02/27} {
+  \draw[orange!65,dashed,line width=.7pt] (\x,\y)--(31.30,12.25);
+  \cameraicon{\x}{\y}{\angle}
+}
+\begin{scope}[shift={(31.30,12.25)},scale=1.02]\BodyMesh\end{scope}
+\node[small] at (31.35,10.28) {Camera positions and orientations};
+\draw[innerflow,draw=purple] (27.43,13.55)--(27.75,13.55)--(27.75,12.25)--(28.70,12.25);
+\draw[innerflow,draw=green!80!black] (35.19,16.65)--(35.36,16.65)--(35.36,15.53)--(17.80,15.53)--(17.80,15.39);
+
+% Module connections: retain the inference and training directions.
+\draw[inference flow] (14.28,24.65)--node[above=2mm,label] {$s_t$} (15.72,24.65);
+\coordinate (render) at (37.20,12.25);
+\draw[inference flow] (36.08,12.25)--(render)--(37.20,31.15)--(36.08,31.15);
+\node[label,fill=sharedbg,inner sep=2pt,rotate=90,text=teal!85!black]
+  at (37.20,23.0) {Render at predicted camera extrinsics};
+\fill[teal] (render) circle[radius=.07];
+
+% 3. Training: uncertainty reduction -> reward -> critic -> planner.
+\path[fill=white,fill opacity=.25,draw=amberline,line width=1.2pt,rounded corners=5mm]
+  (0,0) rectangle (36,8.90);
+\node[title] at (7.10,8.28) {Reinforcement Learning};
+\node[title,text=orange!85!black] at (25.9,7.50) {Training cycle};
+\node[small] at (25.9,6.82) {Reward + planner updates};
+\subpanel{.45}{.60}{13.75}{7.10}{blue}{Reward: reconstruction improvement}
+\node[equation] at (7.1,5.79) {$\Delta\sigma_{h_i}^{2}=\sigma_{h_i,t}^{2}-\sigma_{h_i,t+1}^{2}$};
+\node[small] at (7.1,5.12) {Realized uncertainty reduction after SPC reconstruction};
+\node[label,anchor=east] at (3.30,4.22) {before};
+\node[label,anchor=east] at (3.30,3.33) {after};
+\path[fill=blue!60,rounded corners=1mm] (3.60,3.99) rectangle (11.60,4.45);
+\path[fill=teal!80,rounded corners=1mm] (3.60,3.10) rectangle (8.35,3.56);
+\node[small,anchor=west] at (8.65,3.33) {lower uncertainty};
+\node[small] at (7.1,2.62) {schematic comparison for the same surface region};
+\op{7.10}{1.65}{11.55}{1.00}{orange}{Aggregate reconstruction improvement $\longrightarrow$ reward $r_t$}
+\draw[training flow] (12.8,9.32)--(12.8,7.18);
+\node[small,anchor=east,inner sep=1pt] at (12.35,7.53) {uncertainty change};
+
+\subpanel{16.25}{.60}{35.55}{5.88}{blue}{Inference Critic}
+\node[small] at (25.90,4.91)
+  {Camera extrinsics + pre-decision uncertainty $\longrightarrow$ expected uncertainty gain};
+% Both inputs are available before the proposed observations are executed.
+\op{32.50}{3.68}{5.10}{1.13}{orange}
+  {{\fontsize{13}{16}\selectfont Camera extrinsics\\position + orientation}}
+\path[draw=purple!40,fill=purple!5,rounded corners=1.2mm]
+  (29.95,1.02) rectangle (35.05,2.48);
+\begin{scope}[shift={(30.20,1.29)},scale=.27]\BodyUncertainty\end{scope}
+\node[label,font=\fontsize{13}{16}\selectfont,text width=3.5cm]
+  at (33.18,1.77) {Pre-decision\\uncertainty};
+% Learned joint predictor. No layer sizes or particular RL algorithm are implied.
+\foreach \x/\id/\n in {24.70/L/3,26.00/M/4,27.30/R/3} {
+  \foreach \j in {1,...,\n} {
+    \pgfmathsetmacro{\yy}{3.48+.46*(\j-(\n+1)/2)}
+    \coordinate (net-\id-\j) at (\x,\yy);
+  }
+}
+\foreach \i in {1,2,3} \foreach \j in {1,2,3,4}
+  \draw[ink!30,line width=.45pt] (net-R-\i)--(net-M-\j);
+\foreach \i in {1,2,3,4} \foreach \j in {1,2,3}
+  \draw[ink!30,line width=.45pt] (net-M-\i)--(net-L-\j);
+\foreach \id/\n in {L/3,M/4,R/3}
+  \foreach \j in {1,...,\n}
+    \filldraw[draw=blue!75,fill=blue!20,line width=.6pt] (net-\id-\j) circle[radius=.115];
+\node[small,text width=4.65cm] at (26.00,2.04)
+  {Post-execution\\uncertainty forecast};
+\draw[innerflow,draw=orange] (29.87,3.68)--(28.45,3.68)--(27.60,3.48);
+\draw[innerflow,draw=purple] (29.87,1.77)--(28.45,1.77)--(28.45,3.00)--(27.60,3.00);
+\op{20.25}{3.48}{5.90}{1.60}{orange}
+  {\textbf{Expected gain}\\[3pt]Model uncertainty\\reduction}
+\draw[innerflow,draw=orange] (24.38,3.48)--(23.28,3.48);
+\op{20.25}{1.45}{5.90}{.85}{blue}{Realized gain $r_t$}
+\draw[fineflow,draw=orange,dashed] (20.25,1.93)--(20.25,2.61);
+\node[small,font=\fontsize{11.5}{14}\selectfont] at (26.0,1.10) {Predict before execution};
+\draw[training flow] (37.20,12.17)--(37.20,3.68)--(35.63,3.68);
+\node[small,rotate=90,fill=trainingbg,inner sep=2pt] at (37.20,6.4) {predicted camera extrinsics};
+\draw[training flow] (13.83,1.45)--node[above=2mm,label] {$r_t$} (16.17,1.45);
+% Critic returns to the planner from the left; no critic -> reward edge.
+\draw[training flow] (16.17,4.16)--(15.00,4.16)--(15.00,12.60)--(15.72,12.60);
+\node[small,rotate=90,inner sep=1pt,text=orange!85!black]
+  at (14.65,7.20) {planner update};
+% Copy the statistical state before decision execution. The white underlay
+% separates crossings from the training paths; only arrow endpoints connect.
+\draw[state flow] (13.60,9.32)--(13.60,9.18)--(35.85,9.18)--(35.85,1.77)--(35.63,1.77);
+\node[small,text=purple!85!black,inner sep=1pt]
+  at (32.20,8.64) {pre-decision uncertainty};
+\draw[inference flow] (.45,-1.00)--(1.65,-1.00);
+\node[label,anchor=west] at (1.85,-1.00) {inference data flow};
+\draw[training flow] (8.25,-1.00)--(9.45,-1.00);
+\node[label,anchor=west] at (9.65,-1.00) {training feedback};
+\draw[state flow] (15.60,-1.00)--(16.80,-1.00);
+\node[label,anchor=west] at (17.00,-1.00) {pre-decision state};
+\foreach \x/\shade/\caption in {
+  .45/inferencebg/{Inference cycle},8.25/trainingbg/{Training cycle},
+  15.60/sharedbg/{Shared by both cycles}} {
+  \path[fill=\shade,draw=ink!25,rounded corners=.6mm]
+    (\x,-2.02) rectangle ++(1.20,.44);
+  \node[label,anchor=west] at ({\x+1.40},-1.80) {\caption};
+}
 \end{tikzpicture}
 \end{document}
