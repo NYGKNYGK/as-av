@@ -1,33 +1,9 @@
 \section{Method}
 \label{sec:method}
 
-
-We develop a deep reinforcement learning framework whose observation planner is based on PointNet~\citep{qi2017pointnet}. As illustrated in Figure~\ref{fig:method-framework}, the framework integrates observation planning, SPC reconstruction, and model accuracy assessment through two cycles: an inference cycle for iterative observation selection and reconstruction, and a reinforcement learning training cycle for updating the planner and critic. The planner uses a point-cloud representation of the reconstructed surface together with regional accuracy information to predict subsequent observation positions. These inputs describe both the current surface geometry and its reconstruction quality, allowing observation priorities to adapt as the model is refined. The framework thereby links observation selection to the objective of obtaining an accurate surface model with fewer acquired images.
-
-In the inference cycle, the planner receives the reconstructed surface model and its associated accuracy information from the preceding round and predicts the camera positions for the next observations. Images are rendered at these positions and supplied as inputs to the SPC modeler. SPC incorporates the rendered images into the reconstruction to produce an updated surface model, whose accuracy is then reassessed. Both the updated model and its accuracy information are returned to the planner as inputs for the next inference round. Repeating this sequence makes each observation plan depend on the latest reconstruction and its remaining modeling needs. In particular, regional accuracy feedback allows subsequent observations to target poorly constrained surface regions and add information that is insufficiently represented in the existing observations.
-
-In the reinforcement learning training cycle, the camera extrinsics predicted by the planner and the model uncertainty recorded before the decision are supplied to the inference critic. These inputs allow the critic to forecast the model uncertainty after executing the proposed observations and estimate the resulting uncertainty reduction relative to the pre-decision state. The predicted gain therefore evaluates the observation plan before the images are acquired. After the rendered images have been processed by SPC, the realized reduction in model uncertainty provides reward feedback and a training target for the critic. This feedback trains the critic to predict reconstruction gains, while the critic guides planner updates toward observations expected to reduce model uncertainty. Repeated planning, reconstruction, uncertainty assessment, and parameter updates connect observation selection to its reconstruction outcomes.
-
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/method-framework/method-framework.pdf}
-    \caption{Overview of observation planning for an irregular small body. Blue and amber backgrounds mark the inference and training cycles; their green overlap contains the shared model state and planner. All images and model views depict the same body, with matching ridge and boulder landmarks across camera views, geometry, albedo, uncertainty, and surface profiles. The SPC data block provides the current model and uncertainty state. Colored lines connect identical surface points across geometry and uncertainty views. Both height measurements start from one shared reference; an offset of this reference affects both heights, illustrating correlated errors. The PointNet++ planner predicts camera extrinsics from geometry and uncertainty. The inference critic uses these extrinsics and pre-decision uncertainty to estimate the expected uncertainty reduction. Realized gains train the critic, which guides planner updates. Teal and ochre arrows denote inference data flow and training feedback; the dashed purple connection carries pre-decision uncertainty.}
+    \caption{Overview of observation planning for an irregular small body. Blue and amber backgrounds mark the inference and training cycles; their green overlap contains the shared model state and planner.  The SPC data block provides the current model and uncertainty state. Colored lines connect identical surface points across geometry and uncertainty views. Both height measurements start from one shared reference; an offset of this reference affects both heights, illustrating correlated errors. The PointNet++ planner predicts camera extrinsics from geometry and uncertainty. The inference critic uses these extrinsics and pre-decision uncertainty to estimate the expected uncertainty reduction. Realized gains train the critic, which guides planner updates. Teal and ochre arrows denote inference data flow and training feedback; the dashed purple connection carries pre-decision uncertainty.}
     \label{fig:method-framework}
 \end{figure*}
-
-\subsection{Inference Cycle}
-\subsubsection{SPC Modeling Accuracy}
-
-\subsubsection{Planner Inputs and Outputs}
-
-\subsection{Training Cycle}
-\subsubsection{Image Effectiveness Evaluation}
-
-\subsubsection{Reward}
-
-\subsubsection{Reinforcement Learning Method}
-
-% mehtod 
-% 方法框架（不是闭环系统），一张图，突出我干了什么，图中每一个元素和之后的小结相对应
-
-% 强化学习的观测规划系统（把评价指标上的创新点）, 图像的作用评价体系（理论基础），放到强化学习方法里面

@@ -93,29 +93,111 @@
   9.60/13.80/11.70/{Height integration}} {
   \path[draw=blueline!65,fill=white!65!bluebg,rounded corners=2mm]
     (\xa,29.45) rectangle (\xb,32.85);
-  \node[font=\fontsize{14.5}{17}\selectfont\bfseries,align=center]
+  \node[font=\fontsize{13.5}{16}\selectfont\bfseries,align=center]
     at (\xc,32.40) {\name};
 }
-% Correspondence, lighting and elevation illustrations.
-\draw[blue!70,fill=blue!5] (.95,30.20) rectangle (2.40,31.65);
-\draw[blue!70,fill=white] (2.62,30.40) rectangle (4.07,31.85);
-\foreach \x/\y in {1.25/30.60,1.80/31.20,2.10/30.90} {
-  \draw[blue!45,dashed] (\x,\y)--({\x+1.67},{\y+.20});
-  \fill[orange] (\x,\y) circle[radius=.065];
-  \fill[orange] ({\x+1.67},{\y+.20}) circle[radius=.065];
+% Registration: two actual views of the common body, with matched landmarks.
+\foreach \view/\cx/\angle in {A/1.48/-4,B/3.53/4} {
+  \begin{scope}[shift={(\cx,31.05)},rotate=\angle]
+    \path[fill=blue!15,rounded corners=1mm] (-.80,-.89) rectangle (.90,.81);
+    \path[fill=white,draw=blueline!70,line width=.6pt,rounded corners=1mm]
+      (-.86,-.86) rectangle (.86,.86);
+    \begin{scope}[shift={(-.792,-.792)},scale=.48]
+      \BodyPhoto{\view}
+      \edef\registrationmarks{\csname BodyMarks\view\endcsname}
+      \foreach \rx/\ry/\bx/\by in \registrationmarks {
+        \coordinate (reg-\view-ridge) at ({1.65+.97*\rx},{1.65+.97*\ry});
+        \coordinate (reg-\view-boulder) at ({1.65+.97*\bx},{1.65+.97*\by});
+      }
+    \end{scope}
+  \end{scope}
 }
-\node[small] at (2.50,29.77) {tie points + poses};
-\draw[teal,line width=1.2pt] (5.60,30.33)--(8.53,31.06);
-\draw[innerflow,draw=teal] (7.07,30.70)--(6.65,31.78);
-\node[small,text=teal] at (6.46,31.76) {$\mathbf n$};
-\fill[orange!70] (8.15,31.80) circle[radius=.19];
-\foreach \angle in {0,45,...,315} {
-  \draw[orange] ($(8.15,31.80)+(\angle:.25)$)--($(8.15,31.80)+(\angle:.36)$);
+\draw[orange!90,line width=1pt,densely dashed]
+  (reg-A-boulder) .. controls (2.05,31.82) and (2.90,31.82) .. (reg-B-boulder);
+\draw[blue!65!white,line width=1pt,densely dashed]
+  (reg-A-ridge) .. controls (2.25,30.30) and (2.90,30.30) .. (reg-B-ridge);
+\foreach \view in {A,B} {
+  \draw[blue,fill=white,line width=.9pt] (reg-\view-ridge) circle[radius=.065];
+  \draw[orange,fill=white,line width=.9pt]
+    ($(reg-\view-boulder)-(.065,.065)$) rectangle ++(.13,.13);
 }
-\draw[fineflow,draw=orange] (7.84,31.63)--(7.29,31.01);
-\node[small] at (7.1,29.77) {lighting + slopes};
-\begin{scope}[shift={(11.7,30.85)},scale=.90]\BodyMesh\end{scope}
-\node[small] at (11.7,29.77) {height + albedo};
+\node[small,font=\fontsize{11}{13}\selectfont,text width=3.8cm,inner sep=0pt]
+  at (2.50,29.77) {Landmarks + poses};
+
+% Photometry: a lit surface facet, its normal, and the observing camera.
+\begin{scope}[shift={(7.10,30.88)}]
+  \fill[blue!9] (0,-.55) ellipse[x radius=1.28,y radius=.22];
+  \path[fill=orange!11,draw=none]
+    (1.16,.94)--(-.78,.30)--(.08,-.09)--cycle;
+  \begin{scope}[scale=.80]
+    \BodyMesh
+    % Highlight facets adjacent to the same boulder used in the other views.
+    \foreach \id/\xx/\yy in \BodyVerticesA
+      \coordinate (lit-\id) at (\xx,\yy);
+    \foreach \a/\b/\c in {14/49/48,14/48/54,14/54/51} {
+      \path[fill=orange!40,fill opacity=.65,draw=orange!65,line width=.35pt]
+        (lit-\a)--(lit-\b)--(lit-\c)--cycle;
+    }
+    \coordinate (lit-point) at (-.623,.26);
+  \end{scope}
+  \draw[blue!60,densely dashed,line width=.7pt] (-1.02,.68)--(lit-point);
+  \begin{scope}[shift={(-1.21,.83)},rotate=-34]
+    \path[fill=blue!22,draw=blue,line width=.75pt,rounded corners=.4mm]
+      (-.19,-.13) rectangle (.11,.13);
+    \path[fill=blue!10,draw=blue,line width=.75pt]
+      (.11,-.09)--(.27,-.16)--(.27,.16)--(.11,.09)--cycle;
+    \draw[blue!45,line width=.5pt] (.27,-.16)--(.52,-.25) (.27,.16)--(.52,.25);
+  \end{scope}
+  \fill[orange!10] (1.23,.94) circle[radius=.32];
+  \shade[ball color=orange!65] (1.23,.94) circle[radius=.16];
+  \foreach \angle in {0,45,...,315}
+    \draw[orange!75,line width=.7pt]
+      ($(1.23,.94)+(\angle:.23)$)--($(1.23,.94)+(\angle:.32)$);
+  \draw[orange,line width=.95pt,-{Stealth[length=1.8mm]}]
+    (1.00,.79)--($(lit-point)+(.10,.04)$);
+  \draw[orange!65,line width=.65pt,-{Stealth[length=1.4mm]}]
+    (1.18,.59)--(.02,.10);
+  \draw[teal!90!black,line width=1.2pt,-{Stealth[length=2mm]}]
+    (lit-point)--(-.72,1.00);
+  \node[font=\fontsize{11}{13}\selectfont,text=teal!85!black,anchor=west,inner sep=0pt]
+    at (-.62,.97) {normal};
+  \draw[orange,fill=white,line width=.9pt]
+    ($(lit-point)-(.065,.065)$) rectangle ++(.13,.13);
+\end{scope}
+\node[small,font=\fontsize{11}{13}\selectfont,text width=3.8cm,inner sep=0pt]
+  at (7.10,29.77) {Lighting + slopes};
+
+% Integration: height guides rise from a perspective reference grid to the body.
+\begin{scope}[shift={(11.70,31.02)}]
+  \path[fill=blue!8,draw=blue!28,line width=.55pt]
+    (-1.52,-.86)--(.88,-.62)--(1.52,-.18)--(-.88,-.42)--cycle;
+  \foreach \step in {0,.2,...,1} {
+    \draw[blue!23,line width=.35pt]
+      ({-1.52+2.4*\step},{-.86+.24*\step})--({-.88+2.4*\step},{-.42+.24*\step});
+    \draw[blue!23,line width=.35pt]
+      ({-1.52+.64*\step},{-.86+.44*\step})--({.88+.64*\step},{-.62+.44*\step});
+  }
+  \fill[blue!13] (0,-.57) ellipse[x radius=1.12,y radius=.17];
+  \begin{scope}[scale=.83]
+    \BodyDraw{A}{2}
+    % Geometry and albedo are two products on one continuous surface.
+    \begin{scope}
+      \clip (-1.60,-1.05) rectangle (.25,1.05);
+      \BodyMesh
+    \end{scope}
+    \draw[white!95,line width=1pt,densely dashed] \BodyTrackA;
+  \end{scope}
+  \foreach \xx/\base/\height in {-.80/-.78/-.20,-.15/-.70/-.59,.53/-.62/-.255} {
+    \draw[blue!75,densely dashed,line width=.65pt] (\xx,\base)--(\xx,\height);
+    \fill[blue!60] (\xx,\base) circle[radius=.027];
+  }
+  \draw[teal!85!black,line width=.85pt,-{Stealth[length=1.8mm]}]
+    (1.40,-.54)--(1.40,.03);
+  \node[font=\fontsize{10}{12}\selectfont,text=teal!85!black,
+    rotate=90,inner sep=0pt] at (1.70,-.25) {height};
+\end{scope}
+\node[small,font=\fontsize{11}{13}\selectfont,text width=3.8cm,inner sep=0pt]
+  at (11.70,29.77) {Height + albedo};
 \draw[innerflow] (4.64,31.05)--(4.96,31.05);
 \draw[innerflow] (9.24,31.05)--(9.56,31.05);
 
