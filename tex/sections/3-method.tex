@@ -7,3 +7,7 @@
     \caption{Overview of observation planning for an irregular small body. Blue and amber backgrounds mark the inference and training cycles; their green overlap contains the shared model state and planner.  The SPC data block provides the current model and uncertainty state. Colored lines connect identical surface points across geometry and uncertainty views. Both height measurements start from one shared reference; an offset of this reference affects both heights, illustrating correlated errors. The PointNet++ planner predicts camera extrinsics from geometry and uncertainty. The inference critic uses these extrinsics and pre-decision uncertainty to estimate the expected uncertainty reduction. Realized gains train the critic, which guides planner updates. Teal and ochre arrows denote inference data flow and training feedback; the dashed purple connection carries pre-decision uncertainty.}
     \label{fig:method-framework}
 \end{figure*}
+
+
+% 不确定度来源的分析，和后面联系
+% 
