@@ -1,12 +1,12 @@
-% Compact neural-network schematic for the planner in Section 3.2.
-% Feature stacks, neurons, surface colors, and camera poses are schematic.
+﻿% Neural architecture of the SPC-conditioned planner in Section 3.2.
+% Tensor volumes, layer slabs, and camera locations are schematic.
 \documentclass[tikz,border=2mm]{standalone}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath,amssymb}
 \usepackage{newtxtext,newtxmath}
-\usetikzlibrary{arrows.meta,calc}
-\definecolor{ink}{HTML}{233243}
-\definecolor{muted}{HTML}{647684}
+\usetikzlibrary{arrows.meta,calc,backgrounds}
+\definecolor{ink}{HTML}{243449}
+\definecolor{muted}{HTML}{63758A}
 \definecolor{blue}{HTML}{347DA6}
 \definecolor{teal}{HTML}{268B83}
 \definecolor{purple}{HTML}{7C65A3}
@@ -15,42 +15,54 @@
   {\input{../method-framework/method-framework-body.tex}}
   {\input{figures/method-framework/method-framework-body.tex}}
 
-% Feature volumes, rather than separate cards for individual network layers.
-\newcommand{\featurevolume}[5]{%
+% Layered tensor volumes: the front grid suggests channels / point features.
+\newcommand{\tensor}[5]{%
   \begin{scope}[shift={(#1,#2)}]
-    \path[fill=#5!38,draw=#5!65,line width=.8pt]
+    \path[fill=#5!8,draw=#5!30,line width=.7pt]
+      (.22,.18) rectangle ({#3+.22},{#4+.18});
+    \path[fill=#5!15,draw=#5!45,line width=.8pt]
+      (.11,.09) rectangle ({#3+.11},{#4+.09});
+    \path[fill=#5!29,draw=#5!75,line width=1pt]
       (0,0) rectangle (#3,#4);
-    \path[fill=#5!18,draw=#5!65,line width=.8pt]
-      (0,#4)--(.30,{#4+.26})--({#3+.30},{#4+.26})--(#3,#4)--cycle;
-    \path[fill=#5!58,draw=#5!65,line width=.8pt]
-      (#3,0)--({#3+.30},.26)--({#3+.30},{#4+.26})--(#3,#4)--cycle;
-    \foreach \ratio in {.25,.50,.75}
-      \draw[#5!55,line width=.4pt] (0,{#4*\ratio})--(#3,{#4*\ratio});
+    \path[fill=#5!12,draw=#5!70,line width=.8pt]
+      (0,#4)--(.36,{#4+.30})--({#3+.36},{#4+.30})--(#3,#4)--cycle;
+    \path[fill=#5!52,draw=#5!75,line width=.8pt]
+      (#3,0)--({#3+.36},.30)--({#3+.36},{#4+.30})--(#3,#4)--cycle;
+    \foreach \ratio in {.2,.4,.6,.8} {
+      \draw[#5!45,line width=.45pt] (0,{#4*\ratio})--(#3,{#4*\ratio});
+      \draw[#5!40,line width=.4pt] ({#3*\ratio},0)--({#3*\ratio},#4);
+    }
   \end{scope}
 }
-\newcommand{\networkglyph}[3]{%
+\newcommand{\slab}[5]{%
   \begin{scope}[shift={(#1,#2)}]
-    \foreach \layer/\count in {0/3,1/5,2/3} {
-      \foreach \j in {1,...,\count} {
-        \coordinate (unit-\layer-\j)
-          at ({.94*\layer},{.59*(\j-(\count+1)/2)});
-      }
-    }
-    \foreach \i in {1,...,3} \foreach \j in {1,...,5}
-      \draw[#3!25,line width=.55pt] (unit-0-\i)--(unit-1-\j);
-    \foreach \i in {1,...,5} \foreach \j in {1,...,3}
-      \draw[#3!25,line width=.55pt] (unit-1-\i)--(unit-2-\j);
-    \foreach \layer/\count in {0/3,1/5,2/3}
-      \foreach \j in {1,...,\count}
-        \filldraw[fill=#3!18,draw=#3!80,line width=.85pt]
-          (unit-\layer-\j) circle[radius=.155];
+    \path[fill=#5!27,draw=#5!80,line width=1pt]
+      (0,0) rectangle (#3,#4);
+    \path[fill=#5!10,draw=#5!65,line width=.8pt]
+      (0,#4)--(.22,{#4+.20})--({#3+.22},{#4+.20})--(#3,#4)--cycle;
+    \path[fill=#5!50,draw=#5!75,line width=.8pt]
+      (#3,0)--({#3+.22},.20)--({#3+.22},{#4+.20})--(#3,#4)--cycle;
+    \foreach \ratio in {.15,.3,.45,.6,.75,.9}
+      \draw[#5!55,line width=.5pt] (0,{#4*\ratio})--(#3,{#4*\ratio});
   \end{scope}
+}
+\newcommand{\panel}[7]{%
+  \path[fill=ink!5,draw=none,rounded corners=2.4mm]
+    ({#1+.10},{#2-.10}) rectangle ({#3+.10},{#4-.10});
+  \path[fill=#5!3,draw=#5!38,line width=1pt,rounded corners=2.4mm]
+    (#1,#2) rectangle (#3,#4);
+  \path[fill=#5!11,draw=none,rounded corners=2.4mm]
+    (#1,{#4-.97}) rectangle (#3,#4);
+  \path[fill=#5!11,draw=none]
+    (#1,{#4-.97}) rectangle (#3,{#4-.48});
+  \node[font=\fontsize{17}{20}\selectfont\bfseries,text=#5!85!black,
+    anchor=west] at ({#1+.27},{#4-.49}) {#6\enspace #7};
 }
 \newcommand{\camera}[3]{%
   \begin{scope}[shift={(#1,#2)},rotate=#3]
-    \path[draw=orange!90!black,fill=orange!18,line width=.85pt,rounded corners=.3mm]
-      (-.28,-.18) rectangle (.10,.18);
-    \path[draw=orange!90!black,fill=orange!8,line width=.85pt]
+    \path[draw=teal!85!black,fill=teal!20,line width=1pt,rounded corners=.35mm]
+      (-.25,-.16) rectangle (.10,.16);
+    \path[draw=teal!85!black,fill=teal!7,line width=1pt]
       (.10,-.10)--(.31,-.23)--(.31,.23)--(.10,.10)--cycle;
   \end{scope}
 }
@@ -58,107 +70,201 @@
 \begin{document}
 \begin{tikzpicture}[
   x=1cm,y=1cm,text=ink,font=\fontsize{16}{19}\selectfont,
-  title/.style={font=\fontsize{18}{21}\selectfont\bfseries,align=center},
   note/.style={font=\fontsize{15}{18}\selectfont,text=muted,align=center},
-  flow/.style={-{Stealth[length=3.2mm,width=2.7mm]},line width=1.35pt,
-    draw=ink!75,rounded corners=1.8mm},
-  featureflow/.style={-{Stealth[length=2.8mm,width=2.3mm]},line width=1.2pt,
-    draw=purple,rounded corners=1.8mm},
-  inner/.style={-{Stealth[length=1.9mm,width=1.6mm]},line width=.8pt,draw=muted}
+  label/.style={font=\fontsize{17}{20}\selectfont\bfseries,align=center},
+  flow/.style={-{Stealth[length=3.0mm,width=2.5mm]},line width=1.5pt,
+    draw=ink!80,rounded corners=1.7mm},
+  feature/.style={-{Stealth[length=2.8mm,width=2.3mm]},line width=1.45pt,
+    draw=purple,rounded corners=1.7mm},
+  geometry/.style={-{Stealth[length=2.7mm,width=2.2mm]},line width=1.35pt,
+    draw=orange,rounded corners=1.7mm},
+  inner/.style={-{Stealth[length=2.1mm,width=1.7mm]},line width=1.0pt,
+    draw=muted,rounded corners=1mm},
+  op/.style={draw=purple!60,fill=white,line width=1pt,
+    rounded corners=1.6mm,align=center,inner sep=5pt},
+  geomop/.style={draw=orange!65,fill=orange!6,line width=1pt,
+    rounded corners=1.6mm,align=center,inner sep=5pt}
 ]
-\path[use as bounding box] (-.5,-.85) rectangle (35.6,10.40);
+\path[use as bounding box] (-.35,-1.62) rectangle (32.25,17.65);
 
-% Five major modules; no layer sizes, parameter tables, or derivation boxes.
-\foreach \cx/\color in {7.0/blue,12.2/purple,17.4/blue,22.6/orange,27.8/blue} {
-  \path[fill=\color!4,draw=\color!23,line width=.8pt,rounded corners=3mm]
-    ({\cx-2.17},2.65) rectangle ({\cx+2.17},7.18);
+% Upper tier: uncertain surface, multiscale encoder, and shared statistical state.
+\panel{.15}{10.65}{4.15}{17.35}{teal}{01}{SPC input}
+\panel{4.80}{10.65}{18.40}{17.35}{blue}{02}{PointNet++ encoder}
+\panel{19.05}{10.65}{31.95}{17.35}{purple}{03}{Feature fusion}
+
+\begin{scope}[shift={(2.15,14.05)},scale=1.10]
+  \BodyDraw{A}{3}
+\end{scope}
+\node[note] at (2.15,15.68) {Registered surface};
+\tensor{1.08}{11.65}{1.78}{.69}{teal}
+\node[note,text=teal!85!black] at (2.15,11.10) {$2048\times4$};
+\draw[inner,draw=teal] (2.15,12.82)--(2.15,12.45);
+\draw[flow] (4.19,14.00)--(4.75,14.00);
+
+% Each set-abstraction block keeps separate coordinate and feature streams.
+\node[label,text=blue!85!black] at (6.83,15.75) {Local SA};
+\node[label,text=blue!85!black] at (11.14,15.75) {Regional SA};
+\node[label,text=blue!85!black] at (15.43,15.75) {Global SA};
+\tensor{5.75}{12.40}{1.50}{2.25}{blue}
+\tensor{10.05}{12.65}{1.50}{1.98}{blue}
+\tensor{14.34}{12.95}{1.50}{1.40}{blue}
+\draw[flow] (7.68,13.87)--(9.91,13.87);
+\draw[flow] (11.97,13.87)--(14.20,13.87);
+\node[note,font=\fontsize{14}{16}\selectfont] at (8.80,14.80) {FPS +\\group};
+\node[note,font=\fontsize{14}{16}\selectfont] at (13.09,14.80) {Group\\all};
+\node[label] at (6.70,11.78) {$512\times128$};
+\node[label] at (11.00,11.99) {$128\times256$};
+\node[label] at (15.28,12.29) {$\mathbf g\!:\ 1024$};
+\node[note] at (11.55,11.08) {Shared MLP + BN / ReLU + max pooling};
+
+% Global feature and regional lookup are separate, correctly sourced branches.
+\draw[feature] (16.30,13.87)--(17.48,13.87)--(17.48,14.92)--(28.75,14.92)--(29.20,14.03);
+\node[note,text=purple,fill=white,inner sep=2pt] at (20.30,14.92) {$\mathbf g$};
+\draw[feature] (11.97,13.10)--(12.65,13.10)--(12.65,11.47)--(18.70,11.47)--(18.70,12.50)--(19.47,12.50);
+\node[op,minimum width=3.20cm,minimum height=1.56cm]
+  (project) at (21.18,12.50) {Regional lookup\\$[\mathbf f^{(2)},\bar{\mathbf X},\mathbf n,u]$\\$263\!\to\!256$};
+\draw[feature] (project.east)--(23.30,12.50);
+\tensor{23.36}{11.82}{.68}{1.34}{purple}
+\node[note,text=purple!90!black,font=\fontsize{14}{16}\selectfont]
+  at (23.82,14.25) {$\mathbf Z$\\$M\times256$};
+\draw[feature] (24.44,12.50)--(24.92,12.50);
+\node[op,minimum width=3.05cm,minimum height=1.55cm]
+  (upool) at (26.51,12.50) {Variance pooling\\$w_i^U=\omega_i u_i^2$\\$\mathbf g_U,\ U_0$};
+\node[op,minimum width=4.28cm,minimum height=.86cm]
+  (context) at (26.37,15.98) {Spin, Sun, camera, bounds $\mathbf e$};
+\node[circle,draw=purple!80,fill=purple!12,line width=1.3pt,
+  minimum size=.75cm,inner sep=0pt,font=\fontsize{22}{24}\selectfont]
+  (concat) at (29.42,13.62) {$\Vert$};
+\draw[feature] (upool.east)--(28.62,12.50)--(29.42,13.18);
+\draw[feature] (context.east)--(29.42,15.98)--(concat.north);
+\draw[feature] (concat.east)--(30.18,13.62);
+\slab{30.25}{12.46}{.68}{2.30}{purple}
+\node[label,text=purple!90!black] at (30.72,11.89) {$\mathbf c$};
+\node[note,font=\fontsize{14}{16}\selectfont] at (29.60,11.14) {$d_c=1281+\dim\mathbf e$};
+
+% Lower tier: coupled phase and camera-position decoders.
+\panel{.15}{.65}{8.55}{8.55}{blue}{04}{Phase decoder}
+\panel{9.20}{.65}{17.65}{8.55}{orange}{05}{Rotation + light}
+\panel{18.30}{.65}{26.75}{8.55}{blue}{06}{Joint position decoder}
+\panel{27.40}{.65}{31.95}{8.55}{teal}{07}{Proposals}
+
+% Shared state goes independently to both learned heads. Z bypasses the phase head.
+\draw[feature] (30.68,12.37)--(31.48,12.37)--(31.48,9.31)--(-.05,9.31)--(-.05,6.73)--(.68,6.73);
+\node[note,text=purple,fill=white,inner sep=2pt] at (6.40,9.31) {Shared state $\mathbf c$};
+\draw[feature] (26.99,9.31)--(26.99,6.96)--(22.52,6.96);
+\fill[purple] (26.99,9.31) circle[radius=.07];
+\draw[feature,preaction={draw=white,line width=5.5pt}]
+  (23.70,11.73)--(23.70,10.02)--(8.93,10.02)--(8.93,7.12)--(9.61,7.12);
+\node[note,text=purple,fill=white,inner sep=2pt] at (18.02,10.02)
+  {Point features $\mathbf Z$ + surface attributes};
+
+% Phase head: an actual FC-layer cascade followed by the temporal parameterization.
+\node[note,text=blue!85!black] at (3.36,7.11) {Fully connected + ReLU};
+\slab{1.12}{3.83}{.84}{2.46}{blue}
+\slab{2.98}{4.12}{.84}{1.88}{blue}
+\slab{4.84}{4.45}{.72}{1.22}{blue}
+\draw[inner] (2.25,5.06)--(2.86,5.06);
+\draw[inner] (4.11,5.06)--(4.72,5.06);
+\node[note] at (1.65,3.34) {$512$};
+\node[note] at (3.51,3.63) {$256$};
+\node[note] at (5.27,3.96) {$K$ logits};
+\draw[feature] (.68,6.73)--(.68,5.06)--(1.02,5.06);
+\node[geomop,font=\fontsize{14}{16}\selectfont,text width=1.68cm,
+  inner sep=3pt,minimum width=1.90cm,minimum height=1.96cm]
+  (timeparam) at (6.94,5.06) {Ordered\\phase\\map};
+\draw[inner] (5.85,5.06)--(timeparam.west);
+\draw[flow] (timeparam.east)--(9.13,5.06);
+\node[note,text=orange!90!black] at (7.00,3.54) {$\phi_{1:K}$};
+\draw[draw=ink!45,line width=1.1pt,-{Stealth[length=2mm]}]
+  (1.00,2.25)--(7.69,2.25);
+\foreach \px/\lab in {1.38/0,2.47/1,4.13/2,6.49/K} {
+  \draw[blue!75,line width=1.5pt] (\px,2.08)--(\px,2.43);
+  \node[note] at (\px,1.67) {$t_{\lab}$};
 }
+\node[note,text=blue!85!black,font=\fontsize{14}{16}\selectfont]
+  at (4.30,1.03) {Ordered times + minimum cadence};
 
-% SPC input: uncertainty is attached to the reconstructed surface.
-\begin{scope}[shift={(1.75,4.95)},scale=1.08]\BodyDraw{A}{3}\end{scope}
-\node[title] at (1.75,1.15) {SPC surface};
-\node[note] at (1.75,.12) {Geometry +\\uncertainty};
-
-% PointNet++ hierarchy represented by progressively compressed feature volumes.
-\featurevolume{5.35}{3.40}{.72}{2.65}{blue}
-\featurevolume{6.62}{3.75}{.88}{2.25}{blue}
-\featurevolume{8.00}{4.10}{.92}{1.55}{blue}
-\node[note,text=blue!85!black] at (7.0,6.75) {Local $\rightarrow$ global};
-\node[title] at (7.0,1.15) {PointNet++\\encoder};
-
-% Pointwise projection, variance-weighted pooling, and context fusion are merged.
-\featurevolume{10.62}{5.17}{.55}{.95}{blue}
-\featurevolume{10.62}{3.63}{.55}{.95}{purple}
-\draw[inner,draw=purple!70] (11.49,5.66)--(12.02,5.15);
-\draw[inner,draw=purple!70] (11.49,4.12)--(12.02,4.90);
-\node[circle,draw=purple!65,fill=white,line width=1pt,
-  minimum size=.69cm,inner sep=0pt,font=\fontsize{18}{21}\selectfont]
-  at (12.22,5.02) {$\Sigma$};
-\draw[inner,draw=purple!70] (12.61,5.02)--(13.06,5.02);
-\featurevolume{13.11}{3.97}{.62}{1.88}{purple}
-\node[note,text=purple!85!black] at (12.2,6.75) {Weighted features};
-\node[title] at (12.2,1.15) {Uncertainty\\fusion};
-
-% Learned phase and position heads use the same schematic neural glyph.
-\networkglyph{16.46}{4.95}{blue}
-\node[note,text=blue!85!black] at (17.4,6.75) {Predict when};
-\node[title] at (17.4,1.15) {Phase head};
-\networkglyph{26.86}{4.95}{blue}
-\node[note,text=blue!85!black] at (27.8,6.75) {Predict where};
-\node[title] at (27.8,1.15) {Joint position\\head};
-
-% Deterministic rotation, illumination gating, and per-phase pooling form one module.
-\begin{scope}[shift={(22.32,4.76)},scale=.80]\BodyMesh\end{scope}
-\draw[inner,draw=blue!80] (22.32,3.53)--(22.32,6.27);
-\draw[-{Stealth[length=2.1mm]},draw=orange,line width=1.1pt]
-  (23.05,5.75) arc[start angle=28,end angle=310,x radius=.81,y radius=.32];
-\filldraw[fill=orange!18,draw=orange,line width=.9pt]
-  (23.71,6.10) circle[radius=.23];
+% Rotation layer: geometry creates a phase-dependent gate, then acts on Z.
+\node[note,text=orange!90!black] at (11.26,7.03) {$\mathbf s^B(\phi_k)$};
+\begin{scope}[shift={(11.20,5.85)},scale=.68]\BodyMesh\end{scope}
+\draw[-{Stealth[length=2.4mm]},orange,line width=1.25pt]
+  (11.97,6.25) arc[start angle=25,end angle=320,x radius=.83,y radius=.35];
+\filldraw[orange!85!black,fill=orange!18,line width=.9pt]
+  (12.20,6.75) circle[radius=.17];
 \foreach \angle in {0,60,...,300}
   \draw[orange,line width=.8pt]
-    ($(23.71,6.10)+(\angle:.31)$)--($(23.71,6.10)+(\angle:.42)$);
-\foreach \x/\y in {23.32/5.77,23.72/5.46}
-  \draw[inner,draw=orange!85] (\x,\y)--++(-.55,-.58);
-\node[note,text=orange!85!black] at (22.6,3.12) {Phase conditioning};
-\node[title] at (22.6,1.15) {Rotation \& light\\conditioning};
-
-% Predicted phase-position pairs are converted to poses and checked at the output.
-\begin{scope}[shift={(33.10,4.95)},scale=.77]\BodyMesh\end{scope}
-\foreach \x/\y/\angle in {31.73/6.22/-42,34.65/5.18/188,32.14/3.54/58} {
-  \draw[orange!60,dashed,line width=.75pt] (\x,\y)--(33.10,4.95);
-  \camera{\x}{\y}{\angle}
+    ($(12.20,6.75)+(\angle:.24)$)--($(12.20,6.75)+(\angle:.34)$);
+\draw[geometry] (12.26,5.85)--(13.56,5.85);
+\node[note,text=orange!90!black] at (15.01,7.03) {Illumination gate $\ell_{ik}$};
+\foreach \row in {0,...,4} \foreach \col in {0,...,5} {
+  \pgfmathtruncatemacro{\tone}{15+mod(19*\row+13*\col,65)}
+  \path[fill=orange!\tone,draw=white,line width=.55pt]
+    ({13.84+.40*\col},{5.05+.31*\row}) rectangle ++(.40,.31);
 }
-\node[note] at (33.1,7.02) {Pose conversion\\+ checks};
-\node[title] at (33.1,1.15) {Observation\\sequence};
-\node[note] at (33.1,.10) {$a_1,\ a_2,\ \ldots,\ a_K$};
+\node[note] at (15.05,4.67) {$M\times K$};
+\node[geomop,font=\fontsize{15}{17}\selectfont,text width=4.85cm,
+  inner sep=4pt,minimum width=5.33cm,minimum height=1.02cm]
+  (lpool) at (12.56,3.59) {Weighted pooling\\$w_i^U\ell_{ik}$};
+\draw[feature] (9.61,7.12)--(9.61,3.59)--(lpool.west);
+\draw[geometry] (13.76,5.40)--(13.15,5.40)--(13.15,4.52)--(12.56,4.52)--(lpool.north);
+\tensor{15.95}{2.97}{.62}{1.22}{orange}
+\draw[geometry] (lpool.east)--(15.85,3.59);
+\node[note,text=orange!90!black] at (16.38,2.30) {$K\times260$};
+\node[note,font=\fontsize{14}{16}\selectfont] at (13.43,1.45)
+  {$\mathbf q_k=[\mathbf g_{L,k},m_k,\sin\phi_k,\cos\phi_k,\Delta_k]$\\
+   $\Delta_k=(\phi_k-\phi_0)/\Omega$};
+\draw[flow] (16.99,3.56)--(17.93,3.56)--(17.93,5.06)--(18.64,5.06);
 
-% Main feed-forward path.
-\draw[flow] (3.42,4.95)--(4.77,4.95);
-\draw[flow] (9.23,4.95)--(9.97,4.95);
-\draw[flow] (14.43,4.95)--(15.17,4.95);
-\draw[flow] (19.63,4.95)--(20.37,4.95);
-\draw[flow] (24.83,4.95)--(25.57,4.95);
-\draw[flow] (30.03,4.95)--(31.13,4.95);
+% Joint position head: concatenate shared state and all phase-conditioned tokens.
+\node[circle,draw=purple!80,fill=purple!12,line width=1.2pt,
+  minimum size=.68cm,inner sep=0pt,font=\fontsize{21}{24}\selectfont]
+  (poscat) at (19.08,5.06) {$\Vert$};
+\draw[feature] (22.52,6.96)--(19.08,6.96)--(poscat.north);
+\slab{20.02}{3.83}{.69}{2.46}{blue}
+\slab{21.56}{4.12}{.69}{1.88}{blue}
+\slab{23.10}{4.45}{.64}{1.22}{blue}
+\draw[inner] (poscat.east)--(19.92,5.06);
+\draw[inner] (21.01,5.06)--(21.45,5.06);
+\draw[inner] (22.55,5.06)--(22.99,5.06);
+\node[note] at (20.44,3.31) {$512$};
+\node[note] at (21.98,3.61) {$256$};
+\node[note] at (23.52,3.94) {$4K$};
+\node[geomop,font=\fontsize{14}{16}\selectfont,text width=1.38cm,
+  inner sep=3pt,minimum width=1.64cm,minimum height=2.05cm]
+  (posemap) at (25.37,5.06) {Sphere\\+\\look-at};
+\draw[inner] (24.04,5.06)--(posemap.west);
+\draw[flow] (posemap.east)--(27.34,5.06);
+\node[note] at (22.52,2.47) {$[\mathbf c,\mathbf q_1,\ldots,\mathbf q_K]\ \longrightarrow\ (\mathbf d_k,\zeta_k)_{k=1}^K$};
+\node[note,text=blue!85!black,font=\fontsize{14}{16}\selectfont]
+  at (22.52,1.36) {Continuous position + look-at attitude};
 
-% Observing context is supplied to fusion; it is not produced by the encoder.
-\node[draw=teal!32,fill=teal!5,rounded corners=2mm,line width=.8pt,
-  minimum height=1.05cm,text width=6.45cm,align=center,
-  font=\fontsize{16}{19}\selectfont]
-  (context) at (8.55,9.32) {Spin, Sun, camera\\and acquisition constraints};
-\draw[flow,draw=teal] (context.south)--(8.55,8.12)--(11.0,8.12)--(11.0,7.23);
+% Proposal output uses L <= K after checking; it is not a dynamics guarantee.
+\begin{scope}[shift={(29.68,5.65)},scale=.64]\BodyMesh\end{scope}
+\foreach \px/\py/\ang in {28.39/6.69/-40,31.10/5.95/188,28.71/4.43/60} {
+  \draw[teal!55,dashed,line width=.9pt] (\px,\py)--(29.68,5.65);
+  \camera{\px}{\py}{\ang}
+}
+\node[draw=teal!60,fill=teal!6,line width=1pt,rounded corners=1.6mm,
+  text width=3.46cm,font=\fontsize{13}{15}\selectfont,inner sep=3pt,
+  minimum width=3.67cm,minimum height=1.17cm,align=center]
+  (checks) at (29.68,3.24) {Visibility\\Shadow / FOV\\Pixel scale};
+\draw[inner,draw=teal] (29.68,4.62)--(checks.north);
+\node[label,text=teal!85!black] at (29.68,1.84) {$a_1,\ldots,a_L$};
+\node[note,font=\fontsize{14}{16}\selectfont] at (29.68,1.03) {$L\leq K$ proposals};
 
-% Only the two essential bypasses are shown.
-\draw[featureflow] (13.25,7.23)--(13.25,9.32)--(27.8,9.32)--(27.8,7.23);
-\node[note,text=purple,fill=white,inner sep=2pt] at (20.55,9.32) {Shared state};
-\draw[featureflow] (12.20,2.60)--(12.20,2.03)--(22.60,2.03)--(22.60,2.60);
-\node[note,text=purple,fill=white,inner sep=1.5pt] at (17.40,2.03) {Surface features};
+% Scheduling information travels with the decoded geometry to the output.
+\draw[geometry] (7.91,4.40)--(8.14,4.40)--(8.14,-.05)--(29.68,-.05)--(29.68,.57);
+\node[note,text=orange!90!black,fill=white,inner sep=2pt] at (19.02,-.05)
+  {Retained phases / acquisition times};
 
-% A small color key is enough at this level of abstraction.
-\path[fill=blue!20,draw=blue!50] (7.50,-.59) rectangle ++(.32,.26);
-\node[note,anchor=west] at (8.00,-.46) {Learned network};
-\path[fill=purple!20,draw=purple!50] (15.20,-.59) rectangle ++(.32,.26);
-\node[note,anchor=west] at (15.70,-.46) {Feature fusion};
-\path[fill=orange!20,draw=orange!50] (22.85,-.59) rectangle ++(.32,.26);
-\node[note,anchor=west] at (23.35,-.46) {Known geometry};
+% Compact semantic legend, aligned under the two-tier network.
+\path[fill=blue!28,draw=blue!75] (.55,-1.16) rectangle ++(.40,.31);
+\node[note,anchor=west] at (1.13,-1.00) {Learned feature / FC layers};
+\path[fill=purple!25,draw=purple!75] (9.03,-1.16) rectangle ++(.40,.31);
+\node[note,anchor=west] at (9.61,-1.00) {Feature fusion / bypass};
+\path[fill=orange!25,draw=orange!75] (17.35,-1.16) rectangle ++(.40,.31);
+\node[note,anchor=west] at (17.93,-1.00) {Analytic geometry};
+\path[fill=teal!24,draw=teal!75] (25.04,-1.16) rectangle ++(.40,.31);
+\node[note,anchor=west] at (25.62,-1.00) {Geometric checks};
 \end{tikzpicture}
 \end{document}
