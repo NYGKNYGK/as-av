@@ -1,8 +1,8 @@
-% Figure 2: SPC reconstruction (blue) and added uncertainty/planning (purple).
-% Reconstruction follows Gaskell et al. (2023), Section 3.3.
-% Camera geometry and image-to-surface associations are conditioned on.
-% Covariance and the acquisition objective are an additional local analysis.
-% All terrain, uncertainty bands, and camera positions are schematic.
+% Figure 2: qualitative visual explanation of Section 3.1.
+% Mathematical definitions and derivations remain in the main text.
+% Candidate bands and gain bars are schematic, not experimental results.
+% Both candidate forecasts start from the same current uncertainty.
+% The joint fit accounts for albedo, image scales, and shared reference errors.
 \documentclass[tikz,border=1.5mm]{standalone}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath,amssymb}
@@ -25,11 +25,23 @@
       (-.1,-.14)--(-.17,-.27)--(.17,-.27)--(.1,-.14)--cycle;
   \end{scope}%
 }
-\newcommand{\card}[6]{%
-  \path[draw=#5!32,fill=white,fill opacity=.34,draw opacity=1,
+\newcommand{\card}[5]{%
+  \path[draw=purple!32,fill=white,fill opacity=.4,draw opacity=1,
         line width=.55pt,rounded corners=1.4mm]
     (#1,#2) rectangle (#3,#4);
-  \node[heading,anchor=west,text=#5] at ({#1+.2},{#4-.3}) {#6};
+  \node[heading,anchor=west,text=purple] at ({#1+.2},{#4-.3}) {#5};
+}
+% Identical nominal profiles; only the forecast uncertainty width changes.
+\newcommand{\bandprofile}[4]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \path[fill=#3!20]
+      plot[smooth] coordinates {(-1,{#4}) (-.4,{.23+#4})
+        (.25,{.1+#4}) (.65,{.3+#4}) (1.05,{.18+#4})}
+      --plot[smooth] coordinates {(1.05,{.18-#4}) (.65,{.3-#4})
+        (.25,{.1-#4}) (-.4,{.23-#4}) (-1,{-#4})}--cycle;
+    \draw[#3,line width=.85pt]
+      plot[smooth] coordinates {(-1,0) (-.4,.23) (.25,.1) (.65,.3) (1.05,.18)};
+  \end{scope}%
 }
 
 \begin{document}
@@ -38,156 +50,175 @@
   heading/.style={font=\fontsize{9.5}{11.5}\selectfont\bfseries},
   small/.style={font=\fontsize{8.5}{10.5}\selectfont,text=muted},
   tinylabel/.style={font=\fontsize{7.5}{9}\selectfont,text=muted},
-  flow/.style={-{Stealth[length=1.7mm,width=1.4mm]},line width=.85pt,draw=blue},
-  analysisflow/.style={flow,draw=purple},
+  flow/.style={-{Stealth[length=1.7mm,width=1.4mm]},line width=.85pt,draw=purple},
   measure/.style={<->,>=Stealth,line width=.6pt},
-  op/.style={draw=blue!40,fill=bluebg,rounded corners=.8mm,
-    minimum height=.55cm,align=center,inner sep=2pt}
+  op/.style={draw=blue!40,fill=white,fill opacity=.55,text opacity=1,
+    rounded corners=.8mm,minimum height=.72cm,align=center,inner sep=3pt},
+  joint/.style={draw=purple!45,fill=purplebg,rounded corners=1mm,
+    minimum height=.68cm,minimum width=6.7cm,align=center,inner sep=3pt}
 ]
 \path[use as bounding box] (0,0) rectangle (17.3,18.3);
+
+% Compact background: unchanged scientific role and pale-blue styling.
 \path[fill=bluebg,draw=blue!45,line width=.8pt,rounded corners=2mm]
-  (0,8.2) rectangle (17.3,18.3);
+  (0,15.95) rectangle (17.3,18.3);
+\node[font=\fontsize{10.5}{12.5}\selectfont\bfseries,text=blue,anchor=west]
+  at (.26,17.92) {(a)\quad SPC background: reconstruct a starting surface};
+\node[op,minimum width=4.1cm] (images) at (2.45,17.1)
+  {Images + geometric references};
+\node[op,minimum width=4.1cm] (fit) at (8.0,17.1)
+  {Fit slopes and albedo};
+\node[op,minimum width=4.95cm] (integrate) at (14.15,17.1)
+  {Integrate heights; refit albedo};
+\draw[flow,draw=blue] (images.east)--(fit.west);
+\draw[flow,draw=blue] (fit.east)--(integrate.west);
+\node[small] at (8.65,16.35) {Outputs: heights and albedo.};
+\draw[flow] (1.05,15.93)--(1.05,15.42);
+\node[small,anchor=west,text=purple] at (1.3,15.68)
+  {Start from SPC, then account for measurement errors, priors and reference uncertainty};
+
 \path[fill=purplebg,draw=purple!45,line width=.8pt,rounded corners=2mm]
-  (0,.35) rectangle (17.3,7.55);
-\node[font=\fontsize{11}{13}\selectfont\bfseries,text=blue,anchor=west]
-  at (.26,17.92) {SPC reconstruction: images to slopes to heights};
-\node[small,anchor=west] at (.26,17.53)
-  {Known camera geometry, Sun directions and matched surface samples; registration omitted.};
-\card{.25}{13.5}{8.25}{17.25}{blue}{(a)\quad Predict image brightness}
-\card{8.75}{13.5}{17.05}{17.25}{blue}{(b)\quad Fit slopes and albedo}
-\card{.25}{8.47}{17.05}{12.9}{blue}{(c)\quad Combine neighboring heights and reference data}
-\draw[flow] (8.27,15.3)--(8.73,15.3);
-\draw[flow] (16.65,13.48)--(16.65,12.92);
-
-% (a) One forward equation, with its meaning and symbols nearby.
-\path[fill=blue!15,draw=blue!65,line width=.7pt]
-  (.7,15.13)--(1.3,15.27)--(2.04,15.56)--(2.65,15.3)--(3.4,15.13)
-  --(3.4,15.0)--(.7,15.0)--cycle;
-\coordinate (P) at (2.04,15.56);
-\camera{.99}{16.11}{48}{blue}
-\draw[flow] (P)--(1.12,15.98);
-\draw[flow,draw=teal] (P)--(2.05,16.05);
-\draw[flow,draw=orange] (P)--(3.23,15.98);
-\fill[orange!25,draw=orange] (3.48,16.10) circle (.15);
-\foreach \ang in {0,60,...,300}
-  \draw[orange,line width=.55pt] ($(3.48,16.10)+(\ang:.22)$)--($(3.48,16.10)+(\ang:.3)$);
-\fill[teal] (P) circle (.045);
-\node[small] at (.98,16.48) {camera};
-\node[small,text=teal] at (2.05,16.28) {normal};
-\node[small,text=orange] at (3.48,16.55) {Sun};
-\node[align=left,text width=3.5cm,anchor=north west] at (4.18,16.5)
-  {Predict brightness from the surface tilt, albedo and lighting geometry.};
-\node at (4.25,14.69)
-  {$I_p=\lambda A\Phi(\cos\alpha,\cos\beta,\gamma)$};
-\node[small] at (4.25,14.2)
-  {$I_p$: prediction; $A$: albedo; $\lambda$: image scale; $\Phi$: reflectance law};
-\node[small] at (4.25,13.78)
-  {$\alpha,\beta,\gamma$: incidence, emission and phase angles};
-
-% (b) Detailed normal equations are in the text, not crowded into this panel.
-\node[align=left,text width=7.6cm,anchor=north west] at (9.02,16.5)
-  {Adjust surface tilt and albedo until predicted brightness matches the measured images.};
-\node at (12.9,15.3)
-  {$\displaystyle\min_{t_x,t_y,t_z}\ \sum_k
-    \frac{(I_{o,k}-I_{p,k})^2}{\sigma_k^2}$};
-\node[small] at (12.9,14.4)
-  {$I_o$: measured brightness; $k$: image; $\sigma_k$: residual scale};
-\node[small] at (12.9,13.87)
-  {Outputs: slopes $t_x,t_y$ and albedo $A=1+t_z$};
-\node[small] at (8.65,13.19)
-  {Similar views leave ambiguity; complementary illumination helps separate slope and albedo.};
-
-% (c) The four-neighbor SPC relaxation, separated into explained quantities.
-\begin{scope}[shift={(2.05,11.15)}]
-  \foreach \dx/\dy in {-.75/0,.75/0,0/-.6,0/.6} {
-    \draw[blue!65,line width=.6pt] (0,0)--(\dx,\dy);
-    \fill[blue!35,draw=blue] (\dx,\dy) circle (.075);
-  }
-  \fill[blue] (0,0) circle (.09);
-  \node[small,anchor=west] at (.1,.24) {$h(\mathbf x)$};
-  \node[small] at (0,-.94) {four neighbors};
-\end{scope}
-\node[align=left,text width=12.2cm,anchor=north west] at (4.13,12.1)
-  {Each neighbor predicts a height using its own height and the slope between the two points.};
-\node at (10.35,11.39)
-  {$\ell_k=h(\mathbf x+\delta\mathbf x_k)
-             -\delta\mathbf x_k^T\overline{\mathbf t}_k$};
-\node at (10.35,10.56)
-  {$\displaystyle h(\mathbf x)\leftarrow
-    \frac{\sum_{k=1}^{4}\ell_k+w_c h_c(\mathbf x)}{4+w_c}$};
-\node[small] at (8.65,9.78)
-  {$\overline{\mathbf t}_k$: average endpoint slope; $\ell_k$: neighbor's height prediction; $\delta\mathbf x_k$: grid offset};
-\node[small] at (8.65,9.37)
-  {$h_c$: reference height; $w_c$: its weight; $4$ counts the neighbor predictions; $\mathbf x$: grid location};
-\node[op,minimum width=2.75cm] (height) at (4.25,8.87) {Iterate height updates};
-\node[op,minimum width=2.75cm] (slope) at (8.65,8.87) {Recompute slopes};
-\node[op,minimum width=2.75cm] (albedo) at (13.05,8.87) {Fix slopes; refit albedo};
-\draw[flow] (height.east)--(slope.west);
-\draw[flow] (slope.east)--(albedo.west);
-
-% Outputs needed for the added statistical analysis.
-\draw[analysisflow] (1.05,8.18)--(1.05,7.57);
-\node[small,anchor=west,text=purple] at (1.3,7.88)
-  {Final heights and albedo + image residuals + measurement and reference accuracy};
+  (0,.35) rectangle (17.3,15.4);
 \node[font=\fontsize{11}{13}\selectfont\bfseries,text=purple,anchor=west]
-  at (.26,7.17) {Added analysis: uncertainty and the next acquisition};
-\card{.25}{.65}{8.25}{6.65}{purple}{(d)\quad Extract height uncertainty}
-\card{8.75}{.65}{17.05}{6.65}{purple}{(e)\quad Predict the next observation}
-\draw[analysisflow] (8.27,4.32)--(8.73,4.32);
+  at (.26,15.02) {Surface uncertainty and next observation};
+\card{.25}{8.7}{8.25}{14.55}{(b)\quad Where surface uncertainty comes from}
+\card{8.75}{8.7}{17.05}{14.55}{(c)\quad Uncertainty at each surface point}
+\card{.25}{.65}{17.05}{8.15}{(d)\quad Next observation: compare how much uncertainty each view removes}
+\draw[flow] (8.27,11.8)--(8.73,11.8);
+\draw[flow] (16.65,8.68)--(16.65,8.17);
 
-% (d) The band represents pointwise uncertainty, with shared reference errors.
-\node[align=left,text width=7.35cm,anchor=north west] at (.53,6.02)
-  {Propagate image and reference errors through the fitted model, allowing albedo to vary with height.};
-\node at (4.25,4.74)
-  {$\displaystyle\sigma_{h_i}=\sqrt{(\mathbf C_{hh})_{ii}}\quad\text{(meters)}$};
-\path[fill=purple!17]
-  plot[smooth] coordinates {(.78,3.2) (1.6,3.61) (2.5,3.44) (3.55,3.8) (4.5,3.37) (5.17,3.52)}
-  --plot[smooth] coordinates {(5.17,2.96) (4.5,2.87) (3.55,3.4) (2.5,2.94) (1.6,3.21) (.78,2.8)}--cycle;
-\draw[teal,line width=.9pt]
-  plot[smooth] coordinates {(.78,3.0) (1.6,3.41) (2.5,3.19) (3.55,3.6) (4.5,3.12) (5.17,3.24)};
-\draw[purple,line width=.65pt] (.7,2.32)--(5.23,2.32);
-\draw[purple,dashed,line width=.6pt] (.7,2.54)--(5.23,2.54);
-\draw[measure] (1.6,2.32)--(1.6,3.41) node[pos=.45,right] {$\hat h_i$};
-\draw[measure] (4.5,2.32)--(4.5,3.12) node[pos=.4,left] {$\hat h_j$};
-\node[small] at (2.95,4.09) {Pointwise uncertainty band};
-\node[small] at (2.95,2.05) {Shared reference shifts both heights};
-\node[small] at (6.65,3.99) {$\mathbf C_{hh}$};
-\foreach \x/\y/\tone/\shade in {0/0/teal/65,1/1/teal/45,0/1/purple/35,1/0/purple/35}
-  \path[fill=\tone!\shade,draw=white,line width=.6pt]
-    ({6.17+.48*\x},{3.65-.48*\y}) rectangle ++(.48,-.48);
-\node[small,align=center] at (6.65,2.17) {Shared errors\\couple heights};
-\node[small,align=left,text width=7.4cm,anchor=north west] at (.52,1.86)
-  {$\mathbf C_{hh}$: height covariance; $\sigma_{h_i}$: standard deviation.\\
-   $\hat h_i,\hat h_j$: estimated heights at points $i,j$.\\
-   Diagonal: variance; off-diagonal: covariance.};
+% (b) Three intuitive sources, then joint fitting and a range of plausible heights.
+\node[align=left,text width=7.4cm,anchor=north west] at (.52,13.85)
+  {Different surfaces can explain similar image brightness.};
+% Noisy pixels.
+\begin{scope}[shift={(1.55,12.52)}]
+  \path[fill=white,draw=blue!65,rounded corners=.4mm]
+    (-.54,-.41) rectangle (.54,.41);
+  \foreach \x/\y/\shade in {0/0/20,1/0/55,2/0/30,3/0/65,
+    0/1/40,1/1/25,2/1/70,3/1/40,0/2/65,1/2/45,2/2/30,3/2/55}
+    \path[fill=blue!\shade]
+      ({-.44+.23*\x},{-.31+.22*\y}) rectangle ++(.2,.19);
+\end{scope}
+% Tilt and material reflectance can both change brightness.
+\path[fill=blue!18,draw=blue,line width=.65pt]
+  (3.67,12.26)--(4.25,12.56)--(4.83,12.32)--(4.25,12.15)--cycle;
+\path[fill=blue!48,draw=blue,line width=.65pt]
+  (4.25,12.56)--(4.83,12.32)--(4.25,12.15)--cycle;
+\draw[flow,draw=orange] (3.7,13.04)--(4.12,12.66);
+\draw[flow,draw=teal] (4.25,12.56)--(4.4,13.01);
+% A common control point connects several height estimates.
+\draw[muted,line width=.6pt] (6.42,12.28)--(7.46,12.28);
+\draw[purple,dashed,line width=.6pt] (6.42,12.47)--(7.46,12.47);
+\draw[measure,draw=purple] (6.56,12.28)--(6.56,12.91);
+\draw[measure,draw=purple] (7.3,12.28)--(7.3,12.79);
+\fill[teal] (6.56,12.91) circle (.055);
+\fill[teal] (7.3,12.79) circle (.055);
+\node[small] at (1.55,11.83) {Image noise};
+\node[small] at (4.25,11.83) {Tilt and albedo};
+\node[small] at (6.95,11.83) {Reference errors};
+\node[joint] (jointfit) at (4.25,10.62)
+  {Fit height, albedo and image scale together};
+\draw[flow] (1.55,11.47)--(1.55,11.18)--(4.25,11.18)--(jointfit.north);
+\draw[purple,line width=.85pt] (6.95,11.47)--(6.95,11.18)--(4.25,11.18);
+\draw[purple,line width=.85pt] (4.25,11.47)--(4.25,11.18);
+\node[joint,fill=white,text=purple] (range) at (4.25,9.6)
+  {Plausible heights + linked errors};
+\draw[flow] (jointfit.south)--(range.north);
+\node[small] at (4.25,8.99) {Joint statistical fit with calibrated errors and priors};
 
-% (e) Score a future view by its predicted reduction in height variance.
+% (c) A wide band means less certain height, not a measured error from truth.
+\node[align=left,text width=7.4cm,anchor=north west] at (9.02,13.85)
+  {Wider bands mean less certain heights.};
+\path[fill=purple!20]
+  plot[smooth] coordinates {(9.3,12.37) (10.3,12.68) (11.45,12.56)
+    (12.5,12.96) (13.6,12.65) (14.8,13.03) (16.4,12.87)}
+  --plot[smooth] coordinates {(16.4,11.97) (14.8,12.17) (13.6,11.95)
+    (12.5,12.44) (11.45,12.24) (10.3,12.42) (9.3,12.13)}--cycle;
+\draw[teal,line width=.95pt]
+  plot[smooth] coordinates {(9.3,12.25) (10.3,12.55) (11.45,12.4)
+    (12.5,12.7) (13.6,12.3) (14.8,12.6) (16.4,12.42)};
+\draw[measure,draw=purple,>={Stealth[length=.75mm,width=.7mm]}]
+  (10.3,12.42)--(10.3,12.68);
+\draw[measure,draw=purple] (14.8,12.17)--(14.8,13.03);
+\node[small] at (10.3,13.1) {tighter};
+\node[small] at (14.8,13.35) {wider};
+\draw[muted!50,line width=.5pt] (9.3,11.65)--(16.4,11.65);
+\node[small] at (12.85,11.35) {Surface location};
+% Common vertical-reference error moves a pair of heights together.
+\draw[muted,line width=.6pt] (9.45,9.42)--(12.75,9.42);
+\draw[teal,line width=.9pt] (9.6,10.2)--(10.25,10.5)--(11.3,10.28)--(12.6,10.38);
+\draw[purple,dashed,line width=.8pt] (9.6,10.44)--(10.25,10.74)--(11.3,10.52)--(12.6,10.62);
+\draw[flow] (10.25,10.5)--(10.25,10.74);
+\draw[flow] (11.3,10.28)--(11.3,10.52);
+\draw[muted!65,line width=.5pt] (10.25,9.42)--(10.25,10.5);
+\draw[muted!65,line width=.5pt] (11.3,9.42)--(11.3,10.28);
+\node[small] at (11.1,9.04) {Shared height reference};
+\node[align=left,text width=3.25cm,anchor=west] at (13.3,10.13)
+  {A reference error shifts several heights together.};
+
+% (d) Candidate geometry and the associated forecast bands share one panel.
+\node[small,text=purple] at (3.9,7.42) {Change viewpoint and rotation phase};
+\node[small,text=purple] at (12.65,7.42) {Forecast both views from the same current model};
 \path[fill=blue!16,draw=blue!75,line width=.75pt]
-  (12.0,5.09)--(12.33,5.57)--(13.02,5.71)--(13.6,5.49)
-  --(14.03,5.02)--(13.65,4.67)--(12.81,4.59)--(12.24,4.77)--cycle;
-\draw[teal!65,line width=.55pt] (12.33,5.57)--(12.81,5.17)--(13.6,5.49)--(13.65,4.67);
-\draw[teal!65,line width=.55pt] (12.0,5.09)--(12.81,5.17)--(12.81,4.59);
-\camera{10.0}{5.45}{75}{muted}
-\camera{15.84}{5.45}{-75}{purple}
-\draw[muted,dashed,line width=.6pt] (10.26,5.38)--(12.16,5.15);
-\draw[analysisflow,dashed] (15.58,5.38)--(13.85,5.15);
-\node[small] at (10.04,5.96) {existing view};
-\node[small,text=purple] at (15.8,5.96) {next view};
-\node[small] at (12.9,4.28) {$a$: a feasible acquisition time and camera pose};
-\node at (12.9,3.55)
-  {$\displaystyle G(a)=\sum_i\omega_i
-    \left[\sigma_{h_i}^{\,2}-\sigma_{h_i,+}^{\,2}(a)\right]$};
-\node[small] at (12.9,2.83)
-  {$\sigma_{h_i}^{\,2}$: current variance; $\sigma_{h_i,+}^{\,2}$: predicted variance after $a$};
-\node[small] at (12.9,2.36)
-  {$\omega_i$: surface-area weight; $G$: expected variance reduction};
-\node[text=purple] at (12.9,1.8)
-  {Target: the feasible view with the largest $G(a)$.};
-\node[small,align=center,text=purple] at (12.9,1.03)
-  {Planner approximates this target; verify the proposed view,\\
-   acquire its image and rerun SPC.};
+  (2.95,5.92)--(3.3,6.4)--(4.0,6.54)--(4.6,6.32)
+  --(5.02,5.85)--(4.64,5.5)--(3.8,5.42)--(3.2,5.6)--cycle;
+\draw[teal!65,line width=.55pt] (3.3,6.4)--(3.8,6.0)--(4.6,6.32)--(4.64,5.5);
+\draw[teal!65,line width=.55pt] (2.95,5.92)--(3.8,6.0)--(3.8,5.42);
+\camera{1.25}{6.55}{65}{muted}
+\camera{1.35}{5.43}{95}{orange}
+\camera{6.8}{6.5}{-70}{teal}
+\draw[muted,dashed,line width=.6pt] (1.52,6.46)--(3.1,6.07);
+\draw[flow,draw=orange,dashed] (1.62,5.45)--(3.1,5.78);
+\draw[flow,draw=teal,dashed] (6.54,6.4)--(4.84,6.06);
+\node[small] at (1.25,6.98) {current view};
+\node[small,text=orange] at (1.35,4.98) {View A};
+\node[small,text=teal] at (6.8,6.98) {View B};
+\fill[orange!22,draw=orange] (4.85,7.0) circle (.12);
+\foreach \ang in {0,60,...,300}
+  \draw[orange,line width=.5pt] ($(4.85,7.0)+(\ang:.17)$)--($(4.85,7.0)+(\ang:.23)$);
+\draw[flow,draw=orange] (4.72,6.8)--(4.47,6.48);
+\node[small,text=orange,anchor=west] at (5.12,7.0) {Sun};
+\draw[flow,draw=teal] (3.3,5.21) to[bend right=25] (4.62,5.21);
+\node[small] at (4.0,4.84) {rotation phase};
+\node[small,align=left,text width=7.1cm,anchor=north west] at (.58,4.36)
+  {A: similar viewing / lighting geometry.\\
+   B: a complementary constraint in this illustration.};
+
+% These are alternative predictions, not a sequence of two acquisitions.
+\node[small] at (9.8,6.98) {Current};
+\node[small,text=orange] at (12.65,6.98) {After A};
+\node[small,text=teal] at (15.5,6.98) {After B};
+\bandprofile{9.8}{6.03}{purple}{.36}
+\bandprofile{12.65}{6.03}{orange}{.29}
+\bandprofile{15.5}{6.03}{teal}{.12}
+\node[small] at (9.8,5.35) {wide band};
+\node[small,text=orange] at (12.65,5.35) {slightly narrower};
+\node[small,text=teal] at (15.5,5.35) {much narrower};
+\node[small,align=center] at (12.65,4.48)
+  {Include image noise and albedo uncertainty;\\
+   allow the new image scale to vary.};
+
+% Qualitative area-weighted gain comparison; no invented numerical results.
+\node[small,text=purple] at (4.35,3.26) {Predicted reduction in height variance};
+\path[fill=purple!8,rounded corners=.5mm] (1.45,2.45) rectangle (7.5,2.85);
+\path[fill=purple!8,rounded corners=.5mm] (1.45,1.7) rectangle (7.5,2.1);
+\path[fill=orange!65,rounded corners=.5mm] (1.45,2.45) rectangle (3.15,2.85);
+\path[fill=teal!65,rounded corners=.5mm] (1.45,1.7) rectangle (6.55,2.1);
+\node[small,text=orange] at (1.0,2.65) {A};
+\node[small,text=teal] at (1.0,1.9) {B};
+\node[small,anchor=west] at (3.32,2.65) {smaller gain};
+\node[small,text=white] at (4.05,1.9) {larger gain};
+\node[tinylabel] at (4.45,1.31) {Schematic comparison; weighted by surface area};
+\draw[flow,draw=teal] (7.75,2.4)--(9.08,2.4);
+\path[fill=teal!7,draw=teal!50,rounded corners=1.2mm,line width=.7pt]
+  (9.25,1.5) rectangle (16.55,3.38);
+\node[heading,text=teal] at (12.9,2.98) {Target: greatest predicted gain};
+\node[small] at (12.9,2.43) {View B is preferred in this illustration.};
+\node[small] at (12.9,1.91) {The learned planner approximates this target.};
+\node[small,text=purple] at (8.65,.96)
+  {Acquire the accepted view, rerun SPC and update uncertainty.};
 
 \node[tinylabel] at (8.65,.08)
-  {Blue: SPC calculation. Purple: added uncertainty analysis and acquisition objective. Geometry and uncertainty bands are schematic.};
+  {Bands and gain bars are qualitative illustrations, not experimental results. Detailed equations and assumptions are given in Section 3.1.};
 \end{tikzpicture}
 \end{document}

@@ -16,34 +16,25 @@ xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxxxxxxxxx xxx
 \subsection{SPC model uncertainty}
 \label{subsec:spc-model-uncertainty}
 
-This section quantifies the height uncertainty remaining after SPC reconstruction and predicts how a new acquisition could reduce it. We briefly summarize the reconstruction model needed for this analysis, then develop the joint height covariance and the criterion for selecting a useful viewing direction and rotation phase. Figure~\ref{fig:spc-model-uncertainty} distinguishes the established SPC reconstruction in blue~\citep{gaskell2023,palmer2022} from the added statistical analysis in purple. Camera calibration, camera poses, Sun directions, lateral maplet registration, and image-to-surface associations are held fixed; the resulting height uncertainty is conditional on these assumptions.
+SPC reconstructs surface heights by fitting image brightness and integrating the estimated slopes with geometric references. We characterize the remaining height uncertainty through a joint statistical model that accounts for albedo ambiguity and shared reference errors, then predict how each feasible acquisition would reduce that uncertainty. This prediction defines a reference objective for the learned observation planner. Figure~\ref{fig:spc-model-uncertainty} summarizes the connection from reconstruction to observation selection. Camera calibration, camera poses, Sun directions, lateral maplet registration, and image-to-surface associations are held fixed; all uncertainty estimates are conditional on these assumptions.
 
 \begin{figure*}[tp]
     \centering
     \includegraphics[width=\textwidth]{figures/surface-uncertainty/spc-model-uncertainty.pdf}
-    \caption{SPC reconstruction and uncertainty-guided acquisition. Panels (a)--(c) summarize brightness prediction, slope--albedo fitting, and height integration with geometric references. The added analysis in (d) describes correlated height uncertainty, including shared reference errors. Panel (e) scores feasible acquisitions by their predicted area-weighted reduction in height variance. The planner approximates this criterion. The uncertainty band, covariance colors, and camera positions are schematic; the band represents modeled uncertainty rather than measured error relative to truth.}
+    \caption{Visual explanation of surface uncertainty and next-observation selection. (a) SPC provides the reconstructed heights and albedo. (b) Image noise, slope--albedo ambiguity, and reference errors leave a range of jointly plausible surfaces. (c) Wider bands indicate greater pointwise height uncertainty; a shared reference error shifts several heights together. (d) Two feasible acquisitions are forecast from the same current model, accounting for image noise, albedo, and image-scale uncertainty. In this illustration, the complementary view B leaves a narrower height band and a larger area-weighted variance reduction than view A. The learned planner approximates this statistical target. The terrain, bands, and gain bars are qualitative schematics, not measured errors or experimental results; complementary geometry does not guarantee greater gain in every scene. The mathematical definitions and conditional-model assumptions are given in the text.}
     \label{fig:spc-model-uncertainty}
 \end{figure*}
 
-\noindent\textbf{SPC reconstruction background.}
-SPC represents a local surface patch by a \emph{maplet}, with heights $h(x,y)$, slopes $t_x=\frac{\partial h}{\partial x}$ and $t_y=\frac{\partial h}{\partial y}$, and relative albedo $A$. Heights and horizontal coordinates are expressed in meters in fixed nominal maplet frames, retaining uncertainty in vertical anchoring. The slopes determine the unit normal $\mathbf N$:
-
+SPC represents a local patch by a \emph{maplet}, with height $h(x,y)$, slopes $t_x=\partial h/\partial x$ and $t_y=\partial h/\partial y$, and relative albedo $A$. Coordinates and heights are in meters in fixed nominal maplet frames, with uncertain vertical anchoring. The surface normal and predicted brightness in image $k$ are
 \begin{equation}
-    \mathbf N=\frac{(-t_x,-t_y,1)^T}{\sqrt{1+t_x^2+t_y^2}}
+    \begin{aligned}
+        \mathbf N&=\frac{(-t_x,-t_y,1)^T}{\sqrt{1+t_x^2+t_y^2}},\\
+        I_{p,k}&=\lambda_k A\Phi(\cos\alpha_k,\cos\beta_k,\gamma_k),
+    \end{aligned}
 \end{equation}
+where $\alpha_k,\beta_k,\gamma_k$ are incidence, emission, and phase angles, $\lambda_k$ normalizes image brightness, and $\Phi$ is the reflectance function. SPC fits slopes and albedo to weighted brightness residuals over valid, associated samples, using $A=1+t_z$ with $t_z$ an albedo parameter. A fixed mean albedo removes its common scale ambiguity with $\lambda_k$. The fitted slopes constrain neighboring height differences and are integrated with references from stereo landmarks, limbs, overlapping maplets, or independent terrain data; slopes are then recomputed and albedo refitted~\citep{gaskell2023,palmer2022}. Similar brightness changes can arise from terrain tilt or albedo, while integration couples height errors through shared slopes and references. Complementary geometry helps resolve the former~\citep{palmer2024geometry}; the latter motivates spatial covariance. Brightness residuals alone do not quantify the remaining height uncertainty.
 
-For image $k$, the normal, Sun direction, and viewing direction define the incidence angle $\alpha_k$, emission angle $\beta_k$, and phase angle $\gamma_k$. The predicted brightness is
-
-\begin{equation}
-    I_{p,k}=\lambda_k A \Phi(\cos\alpha_k,\cos\beta_k,\gamma_k)
-\end{equation}
-
-where $\lambda_k$ normalizes image brightness and $\Phi$ is the reflectance function. Using valid, associated image samples, SPC iteratively fits slopes and albedo to weighted brightness residuals. Following its notation, $A=1+t_z$, where $t_z$ is an albedo parameter, not a third slope. Relative albedo is given a fixed mean to remove its common scale ambiguity with $\lambda_k$.
-
-The fitted slopes are integrated into a consistent height field using neighboring height differences and reference constraints from stereo landmarks, limbs, overlapping maplets, or independent terrain data. Slopes are then recomputed from this field and albedo is refitted~\citep{gaskell2023,palmer2022}. Two features of this process motivate the uncertainty analysis: terrain tilt and albedo can explain similar brightness changes, while integration couples heights through shared slope and reference errors. Complementary geometry helps separate the former~\citep{palmer2024geometry}; the latter requires retaining spatial covariance. The reconstructed heights provide a point estimate, whose remaining uncertainty cannot be inferred from brightness residuals alone.
-
-\noindent\textbf{A statistical model for height uncertainty.}
-The uncertainty analysis describes which height variations remain compatible with the observations and how those variations are coupled. Let $\boldsymbol\xi=(\mathbf h^T,\boldsymbol\eta^T)^T$, where $\mathbf h$ contains the $N$ heights and $\boldsymbol\eta$ contains albedos, image normalization coefficients, and uncertain shared control offsets. Let $\mathbf z$ collect brightness measurements, image-space stereo or limb observations, and independent control data, with predictions $\mathbf f(\boldsymbol\xi)$. For zero-mean Gaussian errors of locally fixed covariance $\boldsymbol\Sigma$ and a Gaussian prior with mean $\boldsymbol\xi_0$ and precision $\boldsymbol\Lambda_0$, define the joint maximum a posteriori (MAP) estimate by
+Our joint formulation describes which height variations remain compatible with the observations and how those variations are coupled. Let $\boldsymbol\xi=(\mathbf h^T,\boldsymbol\eta^T)^T$, where $\mathbf h$ contains the $N$ heights and $\boldsymbol\eta$ contains albedos, image normalization coefficients, and uncertain shared control offsets. Let $\mathbf z$ collect brightness measurements, image-space stereo or limb observations, and independent control data, with predictions $\mathbf f(\boldsymbol\xi)$. For zero-mean Gaussian errors of locally fixed covariance $\boldsymbol\Sigma$ and a Gaussian prior with mean $\boldsymbol\xi_0$ and precision $\boldsymbol\Lambda_0$, define the joint maximum a posteriori (MAP) estimate by
 \begin{equation}
     \begin{aligned}
         \hat{\boldsymbol\xi}&=\arg\min_{\boldsymbol\xi} Q(\boldsymbol\xi),\\
@@ -53,9 +44,7 @@ The uncertainty analysis describes which height variations remain compatible wit
     \label{eq:uncertainty-joint-map}
 \end{equation}
 where $\|\mathbf v\|^2_{\mathbf W}=\mathbf v^T\mathbf W\mathbf v$. This is an additional joint statistical model, rather than a restatement of the alternating SPC updates. Joint probabilistic formulations are also used in PhoMo~\citep{driver2025}, although its state and reconstruction procedure differ from the maplet model here.
-
 Convergence of the SPC reconstruction does not establish that it minimizes $Q$. Its output can initialize a joint refinement under Equation~\ref{eq:uncertainty-joint-map}. A posterior interpretation of the covariance below requires refinement to a local minimum of $Q$, or verification that the SPC solution already meets that criterion. Without this consistency, the inverse information is a planning proxy; uncertainty of the actual SPC estimator must instead be assessed by propagating perturbations through the reconstruction or by repeated synthetic reconstructions.
-
 At a consistent fitted state, the local measurement model is
 \begin{equation}
     \begin{aligned}
@@ -76,7 +65,6 @@ Height derivatives must include the affected slopes, normals, and geometric pred
     \label{eq:uncertainty-information}
 \end{equation}
 The Jacobian describes how strongly each parameter change affects the observations, while $\boldsymbol\Sigma^{-1}$ weights that response by measurement precision. A height variation that barely changes the predicted data relative to their noise is weakly constrained by the measurements and retains large uncertainty unless constrained by the prior. This approximation neglects higher-order effects of the nonlinear observation model. Coordinate and albedo-scale conventions are fixed first; remaining physical modes, including ambiguities involving image normalization, must be constrained by observations or justified priors. Numerical damping supplies no information, and algorithmic integration or photometric weights are not automatically calibrated precisions.
-
 Marginalizing the auxiliary parameters gives
 \begin{equation}
     \begin{aligned}
@@ -91,20 +79,16 @@ Equivalently, invert the joint information matrix and extract its height block. 
     \sigma_{h_i}=\sqrt{(\mathbf C_{hh})_{ii}}.
     \label{eq:uncertainty-pointwise-height}
 \end{equation}
-The covariance describes posterior spread conditional on the adopted model and fixed geometry, rather than the repeated-sampling variance of an arbitrary SPC estimator. A small $\sigma_{h_i}$ therefore indicates strong modeled constraints, not demonstrated accuracy relative to the true surface.
-
+Here $(\mathbf C_{hh})_{ii}$ is a variance in square meters and $\sigma_{h_i}$ is a standard deviation in meters. The covariance describes posterior spread conditional on the adopted model and fixed geometry, rather than the repeated-sampling variance of an arbitrary SPC estimator. A small $\sigma_{h_i}$ therefore indicates strong modeled constraints, not demonstrated accuracy relative to the true surface.
 Off-diagonal entries retain shared errors. For example, let $\delta h_i=b+\nu_i$ and $\delta h_j=b+\nu_j$, where the shared vertical-reference offset $b$ is independent of the remaining errors. Then
 \begin{equation}
     \operatorname{Cov}(\delta h_i,\delta h_j)
     =\operatorname{Var}(b)+\operatorname{Cov}(\nu_i,\nu_j).
     \label{eq:uncertainty-shared-reference}
 \end{equation}
-The common offset cancels from $h_i-h_j$, while both heights remain uncertain relative to the fixed nominal reference. This is the example in Figure~\ref{fig:spc-model-uncertainty}(d). If maplet position or orientation is also uncertain, it must be included in the state and propagated through the body-frame point transformation before claiming full spatial uncertainty.
-
+The common offset cancels from $h_i-h_j$, while both heights remain uncertain relative to the fixed nominal reference. This is the example in Figure~\ref{fig:spc-model-uncertainty}(c). If maplet position or orientation is also uncertain, it must be included in the state and propagated through the body-frame point transformation before claiming full spatial uncertainty.
 The observation model must also retain dependence introduced by reused data. Image-derived slopes and overlapping maplets are not independent copies of their source observations. Neither landmark formal uncertainties nor the empirical spread of overlapping-maplet heights supplies the full $\mathbf C_{hh}$ defined here~\citep{gaskell2023,weirich2022}.
-
-\noindent\textbf{Information supplied by a new acquisition.}
-The covariance identifies the surface variations that remain uncertain; selecting a useful observation requires predicting how a new image would respond to those variations. An acquisition $a$ specifies a rotation phase and camera pose. Camera position determines viewing directions, visibility, geometric parallax, and projected pixel scale; rotation phase changes the illumination relative to the body and hence the photometric sensitivity. The current surface is used to identify samples that would be illuminated, visible, and resolved. At each candidate geometry and a fixed visibility mask, linearize the new observation model as
+To connect surface uncertainty to the next observation, we predict how a new image would respond to the variations described by the covariance. An acquisition $a$ specifies a rotation phase and camera pose. Camera position determines viewing directions, visibility, geometric parallax, and projected pixel scale; rotation phase changes the illumination relative to the body and hence the photometric sensitivity. The current surface is used to identify samples that would be illuminated, visible, and resolved. At each candidate geometry and a fixed visibility mask, linearize the new observation model as
 \begin{equation}
     \delta\mathbf z_a\approx
         \mathbf B_a\delta\boldsymbol\xi+
@@ -112,7 +96,6 @@ The covariance identifies the surface variations that remain uncertain; selectin
     \label{eq:uncertainty-new-measurement}
 \end{equation}
 where $\mathbf B_a$ differentiates with respect to the existing state, $\mathbf q_a$ contains new nuisance parameters such as $\lambda_a$, and $\mathbf H_a$ differentiates with respect to them. Derivatives and image noise are forecast at a specified nominal exposure and normalization. Let $\boldsymbol\epsilon_a\sim\mathcal N(\mathbf0,\mathbf N_a)$ be independent of previous errors conditional on the shared state. Assume an independent prior precision $\boldsymbol\Lambda_{q_a}$ for the new parameters; zero precision is allowed if the new measurements constrain the eliminated block. Shared uncertain calibration or control parameters belong in $\boldsymbol\xi$, rather than being introduced as independent errors for each image.
-
 Eliminating $\mathbf q_a$ from the augmented information matrix yields
 \begin{equation}
     \begin{aligned}
@@ -125,7 +108,6 @@ Eliminating $\mathbf q_a$ from the augmented information matrix yields
     \label{eq:uncertainty-effective-information}
 \end{equation}
 This requires $\mathbf D_a$ to be invertible on the retained nuisance subspace. The subtraction removes apparent information that can be explained by adjusting the new image parameters. When there are no new unknowns, it reduces to the usual Jacobian information update. It also avoids trying to invert an old-state information matrix augmented by an entirely unconstrained new parameter.
-
 The updated covariance of the existing state and the pointwise variance gains are
 \begin{equation}
     \begin{aligned}
@@ -137,11 +119,8 @@ The updated covariance of the existing state and the pointwise variance gains ar
     \label{eq:uncertainty-observation-gain}
 \end{equation}
 Here $\mathbf e_i$ selects height $i$ from the existing joint state. At this fixed linearization, $\Delta\mathbf F_a$ is positive semidefinite and the predicted variance gains are nonnegative. Future pixel values are unnecessary for this local forecast, but the Jacobians and noise model depend on the current estimate. The forecast does not average over uncertain terrain, visibility changes, or future nonlinear fits.
-
 A useful viewing direction produces sensitivity to parameter combinations that remain uncertain under $\mathbf C$. A region with large $\sigma_{h_i}$ may yield little gain if the proposed image cannot distinguish its height changes from albedo or normalization changes. Conversely, complementary geometry can separate these effects, and constraining a shared mode can improve several heights together. Repeated geometry can still reduce independent random noise, although it may do little to resolve a weakly observed direction. Thus, the choice depends jointly on the current covariance, the candidate viewing and lighting geometry, and measurement precision.
-
-\noindent\textbf{Acquisition objective and reconstruction feedback.}
-Define the ideal next acquisition by
+Combining these pointwise gains, we define the ideal next acquisition by
 \begin{equation}
     \begin{aligned}
         G(a)&=\sum_i\omega_i\,\Delta\sigma_{h_i}^2(a),\\
@@ -150,26 +129,23 @@ Define the ideal next acquisition by
     \label{eq:uncertainty-next-view}
 \end{equation}
 Here $\omega_i\geq0$ is the represented surface-area weight, normalized to $\sum_i\omega_i=1$, and $\mathcal A$ is the feasible acquisition set. The weights prevent dense tessellation from receiving extra priority. Maximizing $G$ is equivalent to minimizing the area-weighted trace of the future marginal height covariance: a weighted A-optimal design criterion~\citep{huan2024design}. This standard statistical criterion defines the planning target; its application here depends on the specified SPC observation and uncertainty model.
-
-The PointNet++ planner uses this criterion as a statistical reference; Section~\ref{subsec:observation-planner} distinguishes its single-view and sequence formulations from the empirical training objective. It predicts phase--pose pairs from geometry, marginal height uncertainty, and observing context, returning the first accepted pair as the next proposal. Because identical marginal variances can conceal different correlations, these inputs do not determine the exact gain for every statistical state. Both the learned policy and a critic using only these inputs share this limitation.
-
+The PointNet++ planner uses this criterion as a statistical reference; Section~\ref{subsec:observation-planner} extends it to finite observation sequences and describes the forward prediction pipeline. It predicts phase--pose pairs from geometry, marginal height uncertainty, and observing context, returning the first accepted pair as the next proposal. Because identical marginal variances can conceal different correlations, these inputs do not determine the exact gain for every statistical state. Both the learned policy and a critic using only these inputs share this limitation.
 After observing, rerun reconstruction, update the statistical fit or validate its consistency, and recompute uncertainty at corresponding surface locations. Compare gains using the same area weights, reference conventions, prior, and noise-model calibration. Actual gains after nonlinear refitting can be negative; the nonnegative forecast applies only to the fixed local model. Several acquisitions must be evaluated jointly, since summing their separate gains from the same original state would count redundant information more than once.
-
 Finally, modeled uncertainty must be checked against geometric accuracy. A wrong reflectance model or unresolved terrain can produce systematic height error despite small conditional covariance~\citep{palmer2024accuracy}. Independent terrain measurements or repeated reconstructions with known synthetic truth are required to assess error and uncertainty calibration~\citep{weirich2022,alasad2021}. Thus, covariance reduction is a model-based planning objective, while final surface accuracy remains a separate validation outcome.
 
 \subsection{Observation planner}
 \label{subsec:observation-planner}
 
-Section~\ref{subsec:spc-model-uncertainty} defines a statistical reference for uncertainty reduction. We now describe a planner that maps the current surface, marginal height uncertainties, and observing conditions to $K$ chronologically ordered rotation phases and camera positions. The camera attitude follows a body-centered pointing rule. For $K=1$, the reference criterion is the single-acquisition gain in Equation~\ref{eq:uncertainty-next-view}; for $K>1$, it is the joint gain of a finite observation sequence. Training uses realized reconstruction gains as empirical supervision, as defined below. Executing the first accepted acquisition and replanning is a receding-horizon heuristic; its first acquisition need not maximize the single-view criterion. Here $K$ is a fixed proposal budget for each network configuration, and both phases and positions are continuous outputs.
+Building on the uncertainty model in Section~\ref{subsec:spc-model-uncertainty}, the planner maps the current surface, marginal height uncertainties, and observing conditions to $K$ chronologically ordered rotation phases and camera positions. Here $K$ is a fixed proposal budget for each network configuration, and both phases and positions are continuous outputs. Camera attitude follows a body-centered pointing rule, completing the pose associated with each predicted acquisition time.
 
 The reference architecture combines a PointNet++ surface encoder~\citep{qi2017pointnetpp}, variance-weighted feature pooling, an analytic rotation layer, and coupled phase and position heads. These components specify how SPC uncertainty enters the decision; their numerical settings are not an experimentally established optimum. Learned view selection from point clouds, continuous camera actions, and illumination-aware small-body scheduling have precedents in PC-NBV, GenNBV, and the work of \citet{piccinin2022}, respectively~\citep{zeng2020,chen2024}. The distinction pursued here is their combination with an SPC height-variance objective and continuous joint prediction of observation time and position.
 
-Figure~\ref{fig:planner-architecture} follows the information flow: encode the uncertain surface, fuse observing context, predict phases, condition surface features on their illumination, and predict positions. Pose conversion and geometric checks then produce a proposed observation sequence.
+Figure~\ref{fig:planner-architecture} summarizes this information flow. We first define the sequence objective and sampled SPC inputs, then construct uncertainty-aware surface features and a body-frame model of rotation-dependent illumination. The coupled prediction heads combine these quantities with observing context to produce phases and positions. Pose conversion, observation checks, and reconstruction feedback complete the planning loop; the final subsection explains how sampling and caching limit its computational cost.
 
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=\textwidth]{figures/planner-architecture/planner-architecture.pdf}
-    \caption{Network architecture of the observation planner. The upper row encodes the SPC surface at three scales and forms a shared state from global features, variance-weighted point features, and observing context. The lower row predicts ordered phases, constructs illumination-conditioned features, and jointly decodes camera positions. Purple connections carry shared and pointwise features; $\Vert$ denotes concatenation. Tensor shapes and fully connected layer widths match the reference configuration. Pose conversion and geometric checks retain $L\leq K$ proposals; spacecraft reachability requires a separate check. Feature volumes and camera locations are schematic.}
+    \caption{Conceptual architecture of the observation planner. The surface encoder combines PointNet++ features with uncertainty-weighted fusion. Within the sequence decoder, predicted phases determine illumination through the known spin and Sun direction; the resulting conditioned features guide joint camera-position prediction. Shared surface features and observing context support both prediction heads, with internal connections omitted for clarity. Pose conversion and geometric checks produce the proposed observation sequence. All phases and positions are predicted in one planner call. Feature blocks, neurons, and camera locations are schematic; implementation details are given in the text.}
     \label{fig:planner-architecture}
 \end{figure*}
 
@@ -183,7 +159,7 @@ For a geometrically accepted sequence $\mathcal Q=(a_1,\ldots,a_L)$, $L\leq K$, 
               -(\mathbf C_{hh}^{+}(\mathcal Q))_{ii}\right].
     \label{eq:planner-sequence-gain}
 \end{equation}
-The posterior is forecast jointly from all new measurements and nuisance parameters under the fixed local model of Section~\ref{subsec:spc-model-uncertainty}. The evaluation locations and area weights remain fixed across candidates. This is a sequence version of the weighted A-optimal criterion, not a sum of independently computed gains. An empty sequence has zero gain. This local forecast supplies a design reference; the empirical training objective uses realized reduction after reconstruction and may rank sequences differently.
+The posterior is forecast jointly from all new measurements and nuisance parameters under the fixed local model of Section~\ref{subsec:spc-model-uncertainty}. The evaluation locations and area weights remain fixed across proposed sequences. For one acquisition, this reduces to Equation~\ref{eq:uncertainty-next-view}; for several acquisitions, the joint update accounts for overlapping information. It is therefore a sequence version of the weighted A-optimal criterion, rather than a sum of independently computed gains. An empty sequence has zero gain. This criterion guides the planner design, but is not evaluated exactly during each neural prediction.
 
 After the SPC fitting and height integration have converged, the interface receives registered surface points $\mathbf X_i^B$, their height standard deviations $\sigma_{h_i}$ from Equation~\ref{eq:uncertainty-pointwise-height}, and their surface associations. The frame $B$ has its origin at the rotation center and its $z$ axis along the known spin axis. Maplet coordinates and normals are transformed into this common frame; the uncertainty remains attached to the same estimated height and physical surface location. It is supplied by the additional statistical model in Section~\ref{subsec:spc-model-uncertainty}, subject to its estimator-consistency and calibration requirements, rather than inferred from brightness residual magnitude or image count. Normals $\mathbf n_i^B$, albedo, and represented surface area are retained as auxiliary surface attributes.
 
@@ -202,7 +178,7 @@ The four-channel representation in Figure~\ref{fig:method-framework} contains co
 \subsubsection{Uncertainty-aware surface encoding}
 \label{subsubsec:planner-encoder}
 
-The encoder follows PointNet++ set abstraction: sample representative centers, group spatial neighbors, apply a shared pointwise multilayer perceptron (MLP), and pool within each group~\citep{qi2017pointnetpp}. This extends the symmetric point-set aggregation of PointNet~\citep{qi2017pointnet} to local and regional surface structure. For center $j$ at level $\ell$, the grouped feature is
+The normalized coordinates and height uncertainties enter a PointNet++ encoder: sample representative centers, group spatial neighbors, apply a shared pointwise multilayer perceptron (MLP), and pool within each group~\citep{qi2017pointnetpp}. This extends the symmetric point-set aggregation of PointNet~\citep{qi2017pointnet} to local and regional surface structure. For center $j$ at level $\ell$, the grouped feature is
 \begin{equation}
     \mathbf f_j^{(\ell+1)}=\max_{i\in\mathcal N_j^{(\ell)}}
     \psi_\ell\!\left(
@@ -212,9 +188,7 @@ The encoder follows PointNet++ set abstraction: sample representative centers, g
 \end{equation}
 where the maximum is channel-wise, $\psi_\ell$ shares weights across neighbors, and $\mathbf f_i^{(0)}=u_i$. Farthest-point sampling selects centers on the surface; a radius query constructs each neighborhood, retaining the nearest points if its capacity is exceeded. Unused entries are masked before pooling. A coordinate-based initial center and deterministic tie handling make sampling independent of input ordering apart from geometrically indistinguishable ties. Sampling here compresses the reconstructed surface and does not discretize the camera action space.
 
-The shared MLP combines relative position with uncertainty, distinguishing geometrically similar regions with different constraint strengths. Regional aggregation adds surrounding terrain, while global pooling summarizes the body. These features describe where uncertainty occurs; viewing and illumination geometry are still needed to predict whether an acquisition can reduce it.
-
-Table~\ref{tab:planner-architecture} gives the reference configuration. Coordinates are carried separately from learned features and concatenated as in Equation~\ref{eq:planner-set-abstraction}. The first two stages capture local uncertainty patterns and their regional context. The final stage groups all remaining centers, concatenates their body-frame coordinates and features, and produces a global descriptor $\mathbf g\in\mathbb R^{1024}$. Pointwise affine layers use batch normalization and ReLU; inference uses the stored normalization statistics. The descriptor is recomputed when uncertainty changes, even if the geometry and neighborhood indices remain unchanged.
+The shared MLP combines relative position with uncertainty, distinguishing geometrically similar regions with different constraint strengths. In the reference configuration, the local and regional stages retain 512 and 128 centers with 128 and 256 feature channels, respectively. Coordinates are carried separately from learned features and concatenated as in Equation~\ref{eq:planner-set-abstraction}. The final stage groups all regional centers, concatenates their body-frame coordinates and features, and produces a global descriptor $\mathbf g\in\mathbb R^{1024}$. Pointwise affine layers use batch normalization and ReLU; inference uses the stored normalization statistics. The descriptor is recomputed when uncertainty changes, even if the geometry and neighborhood indices remain unchanged.
 
 We also retain an explicit summary weighted by unresolved height variance. For each input sample, let $j(i)$ be its nearest valid regional center and form
 \begin{equation}
@@ -234,27 +208,12 @@ where $\chi$ is a shared $263\to256$ affine projection followed by ReLU. The 263
 \end{equation}
 Here $\varepsilon>0$ protects the denominator. The descriptors $\mathbf g$ and $\mathbf g_U$ retain overall shape and emphasize uncertain terrain, respectively; $U_0$ preserves the uncertainty magnitude removed by normalizing the weighted mean. Area weighting reduces sensitivity to sampling density in this branch, although PointNet++ neighborhood pooling is not itself an area integral. The variance weights are a design heuristic motivated by the objective, not an estimate of acquisition gain: a large variance may belong to a mode that the proposed image cannot constrain.
 
-\begin{table}[t]
-    \centering
-    \caption{Reference planner configuration. Radii are expressed in coordinates normalized by $S$. MLP widths include the coordinate channels at their inputs. The global stage groups all 128 regional centers.}
-    \label{tab:planner-architecture}
-    \small
-    \setlength{\tabcolsep}{3pt}
-    \begin{tabular}{lccc}
-        \toprule
-        Stage & Centers & Radius / cap & MLP widths \\
-        \midrule
-        Local & 512 & $0.10$ / 32 & $4,64,64,128$ \\
-        Regional & 128 & $0.20$ / 64 & $131,128,128,256$ \\
-        Global & 1 & all & $259,256,512,1024$ \\
-        \bottomrule
-    \end{tabular}
-\end{table}
+Together, $\mathbf g$, $\mathbf g_U$, and $U_0$ summarize the current surface, while $\mathbf z_i$ and $w_i^U$ remain available for phase-dependent pooling. These quantities are fixed within one planning call. The next step introduces the changing illumination under which that surface could be observed.
 
 \subsubsection{Rotation and illumination conditioning}
 \label{subsubsec:planner-rotation}
 
-Unlike a static-object feature extractor, the planner must distinguish the same terrain observed at different rotation phases. Assume rigid rotation about the known axis at positive angular speed $\omega$, fixed directional illumination, and exposures short enough to neglect rotational image smear. With current time $t_0$ and phase $\phi_0$,
+The surface representation remains attached to the body, but its observation geometry varies with rotation phase. To condition the encoded features on this variation, assume rigid rotation about the known axis at positive angular speed $\omega$, fixed directional illumination, and exposures short enough to neglect rotational image smear. With current time $t_0$ and phase $\phi_0$,
 \begin{equation}
     \begin{aligned}
         \phi(t)&=\phi_0+\omega(t-t_0),\\
@@ -296,7 +255,7 @@ A facet with $c_{i,0}+\sqrt{c_{i,c}^2+c_{i,s}^2}\leq0$ never receives positive d
 \subsubsection{Continuous phase and position prediction}
 \label{subsubsec:planner-decoder}
 
-Known observing conditions form a context vector $\mathbf e$: the current phase encoded by its sine and cosine, $\mathbf s^B(0)$, spin rate, normalized camera intrinsics, body scale, and acquisition bounds. Exposure, reflectance, and noise-model settings are fixed for a configuration or supplied as additional context when they vary. For planning duration $T$ and minimum separation $\delta_t$, define $\Omega=\omega T$ and $\delta_\phi=\omega\delta_t$, with $\Omega>K\delta_\phi$. We apply the same minimum delay from $t_0$ to the first observation. The body frame is preserved because its orientation relative to the spin axis and Sun has physical meaning.
+The decoder combines the surface descriptors with the rotation model in two coupled steps: predict the observation phases, then use their illumination-conditioned features to predict camera positions. Known observing conditions form a context vector $\mathbf e$: the current phase encoded by its sine and cosine, $\mathbf s^B(0)$, spin rate, normalized camera intrinsics, body scale, and acquisition bounds. Exposure, reflectance, and noise-model settings are fixed for a configuration or supplied as additional context when they vary. For planning duration $T$ and minimum separation $\delta_t$, define $\Omega=\omega T$ and $\delta_\phi=\omega\delta_t$, with $\Omega>K\delta_\phi$. We apply the same minimum delay from $t_0$ to the first observation. The body frame is preserved because its orientation relative to the spin axis and Sun has physical meaning.
 
 First concatenate $\mathbf c=[\mathbf g,\mathbf g_U,U_0,\mathbf e]$, of dimension $d_c=1281+\dim\mathbf e$. A phase head with fully connected widths $d_c\to512\to256\to K$ predicts logits $b_1,\ldots,b_K$. Hidden layers use ReLU and the final layer is linear. Chronological phases are obtained by
 \begin{equation}
@@ -347,7 +306,7 @@ For normalized distance bounds $1<r_{\min}<r_{\max}$, convert the outputs to bod
 \end{equation}
 Direction vectors below a numerical norm tolerance are invalid. The enclosing sphere places camera centers outside the current body; it does not enforce orbital accessibility or a collision-free transfer. The planning objective here concerns reconstruction geometry, without a fuel penalty.
 
-The position head thus receives pooled location, orientation, and terrain features conditioned on predicted illumination. This provides a route from uncertainty to a camera proposal, without preserving every individual surface feature or guaranteeing that the camera sees the emphasized region. Visibility is checked explicitly; information gain and complementarity must be assessed from joint sequence outcomes.
+The position head thus receives pooled location, orientation, and terrain features conditioned on predicted illumination. This provides a route from uncertainty to a camera proposal, without preserving every individual surface feature or guaranteeing that the camera sees the emphasized region. The resulting poses therefore undergo the observation checks described in Section~\ref{subsubsec:planner-execution}.
 
 For body-centered imaging, camera orientation is determined by pointing the optical axis toward the body origin, with a fixed roll convention. Let $\mathbf z_k=-\hat{\mathbf d}_k$ be the camera forward axis and let $\mathbf a$ be the body $z$ axis, replaced by the body $y$ axis when nearly parallel to $\mathbf z_k$. Define $\mathbf x_k=\operatorname{normalize}(\mathbf z_k\times\mathbf a)$ and $\mathbf y_k=\mathbf z_k\times\mathbf x_k$. The body-to-camera rotation has these vectors as rows,
 \begin{equation}
@@ -368,55 +327,17 @@ This convention uses a forward $z$ axis and downward image $y$ axis. If $\mathbf
 \end{equation}
 Rendering the stationary body mesh uses $(\mathbf R_{CB,k},\mathbf t_{CB,k})$ and $\mathbf s^B(\phi_k)$ together. Rendering a rotated inertial mesh instead uses the inertial extrinsics and $\mathbf s^I$. Applying both transformations to the mesh would count its rotation twice. The look-at convention reduces the output dimension, but restricts this configuration to body-centered views rather than independently targeted close-up images.
 
-\subsubsection{Geometric validation and gain supervision}
-\label{subsubsec:planner-visibility}
-
-The observing context permits phase-dependent predictions, while explicit geometric checks determine whether the decoded images can constrain the surface. Transform the local normal of Section~\ref{subsec:spc-model-uncertainty} into the common body frame and denote it by $\mathbf n_i^B$. For each decoded observation,
-\begin{equation}
-    \begin{aligned}
-        \mu_{ik}^{\mathrm{sun}}&=(\mathbf n_i^B)^T\mathbf s^B(\phi_k),\\
-        \mathbf v_{ik}^B&=\frac{\mathbf p_k^B-\mathbf X_i^B}
-                              {\|\mathbf p_k^B-\mathbf X_i^B\|},\\
-        \mu_{ik}^{\mathrm{view}}&=(\mathbf n_i^B)^T\mathbf v_{ik}^B.
-    \end{aligned}
-    \label{eq:planner-incidence-emission}
-\end{equation}
-A usable surface sample must have positive incidence and emission cosines, lie within the calibrated image frustum, and pass separate shadow and camera-occlusion tests. A positive normal--Sun dot product alone does not establish illumination on a concave body. Rays toward the Sun and camera are tested against the full mesh using a cached bounding-volume hierarchy, with surface offsets to avoid numerical self-intersections. Incidence, emission, photometric phase angle, albedo, and projected pixel scale are checked against the valid domain of the adopted reflectance and image-noise models. Grazing or unresolved observations can therefore be excluded even when geometrically visible.
-
-An acquisition is geometrically rejected when its tested, area-weighted usable surface support falls below a configured minimum. Rejected slots reduce the accepted proposal count; they are not replaced by duplicate poses. Passing these tests establishes geometric suitability under the current mesh, not positive information gain or spacecraft reachability. The decoded positions and times must also pass an external trajectory and pointing-feasibility check before execution; minimum temporal spacing and positions outside an enclosing sphere do not establish a feasible transfer.
-
-SCONE estimates newly covered surface using visibility and observation history~\citep{guedon2022}. Our reference score instead measures the joint covariance reduction in Equation~\ref{eq:planner-sequence-gain}. Neither visibility nor the variance-weighted illumination gate evaluates this score: repeated visible images may constrain the same modes, and a large marginal variance may remain insensitive to a proposed view.
-
-The gain critic in Figure~\ref{fig:method-framework} requires a target matched to the images actually acquired. Let $\widetilde{\mathcal Q}$ be a decoded proposal, $\mathbf m$ its acceptance mask, and $\mathcal Q$ the acquired subsequence. The mask records geometric rejection and any further execution rejection used in that rollout. With uncertainty evaluated before acquisition and after nonlinear reconstruction, define the realized gain
-\begin{equation}
-    R(\mathcal Q)=\sum_i\omega_i
-       \left[\sigma_{h_i,\mathrm{before}}^2
-                    -\sigma_{h_i,\mathrm{after}\,\mathcal Q}^2\right].
-    \label{eq:planner-realized-gain}
-\end{equation}
-The comparison uses the same evaluation locations, area weights, prior, reference conventions, and noise calibration. Unlike the fixed-linearization forecast $G$, $R$ may be negative after refitting. A training rollout that acquires the complete accepted sequence can supply its sequence label. If only its first acquisition is executed before replanning, the resulting change labels that singleton acquisition, not the unexecuted sequence. Training a $K>1$ sequence critic therefore requires matched sequence rollouts; single-acquisition feedback alone does not supply those labels.
-
-For compressed pre-decision input $\mathbf x$, a gain regressor $V_\psi(\mathbf x,\widetilde{\mathcal Q},\mathbf m)$ can be fitted by
-\begin{equation}
-    \mathcal L_{\mathrm{critic}}=
-       \mathbb E_{\mathcal D}\!\left[
-       \bigl(V_\psi(\mathbf x,\widetilde{\mathcal Q},\mathbf m)
-                     -R(\mathcal Q)\bigr)^2\right],
-    \label{eq:planner-critic-target}
-\end{equation}
-where $\mathcal D$ contains matched reconstruction rollouts, including rejected proposals. An empty accepted sequence has zero variance gain; rejection penalties, if used, are separate from $R$. With only the compressed input, this critic estimates conditional expected realized gain over the training distribution, rather than recovering $G$ for every full SPC state. A critic intended to reproduce that reference score would instead require labels from the local information update and sufficient joint-information inputs.
-
-The planner can use the differentiable regressor as a surrogate objective. Gradients through the illumination gate and continuous pose outputs do not differentiate the hard ray tests, rejection decisions, or SPC solver. Acceptance masks are held fixed within a local surrogate-gradient update and recomputed for each new proposal. Training must include rejected outputs and provide valid initial proposals or a separate exploration/feasibility mechanism: the zero empty-sequence target alone gives no direction out of an invalid region. This defines gain supervision; a reinforcement-learning value function would additionally require a return and update rule. Critic calibration, proposal validity, and final geometric accuracy require separate evaluation.
-
 \subsubsection{Replanning and computation on large models}
 \label{subsubsec:planner-execution}
+
+The decoded times and extrinsics complete one forward prediction. Observation checks then use the full mesh to test field of view, direct illumination, shadows, camera occlusion, and the applicable photometric and resolution limits. A cached bounding-volume hierarchy supports the ray queries. Discarding slots with insufficient area-weighted usable surface support leaves $L\leq K$ accepted proposals in chronological order. These checks establish geometric suitability under the current model; they do not evaluate the joint information gain.
+
+The first accepted pair is returned as the next observation proposal, subject to a separate trajectory and pointing-feasibility check before execution. The remaining pairs are tentative and are replaced after the next reconstruction update. Executing one acquisition and replanning is a receding-horizon heuristic: the first element of a jointly predicted sequence need not maximize the single-view criterion. If every proposal is rejected, no observation is recommended. A configured uncertainty tolerance may stop acquisition only over the evaluated surface; missing or masked regions do not thereby meet the modeling requirement.
+
+After the acquired image or batch is incorporated into SPC, the statistical fit is checked for consistency and uncertainty is recomputed at corresponding surface locations using the same reference conventions and calibration. This refreshed state supplies the next planner input. Thus, the reconstruction update closes the loop back to Section~\ref{subsubsec:planner-input}; uncertainty changes follow the new observations and refitting, rather than being reduced artificially when a pose is predicted.
 
 The full-resolution SPC model is retained for reconstruction and geometric verification. Only the sampled surface enters PointNet++, keeping the neural input and intermediate tensors bounded as mesh resolution increases. The uncertainty interface can obtain the needed covariance diagonal entries through solves $\mathbf F\mathbf y_i=\mathbf e_i$, followed by $\sigma_{h_i}^2=\mathbf e_i^T\mathbf y_i$, without materializing the dense inverse. The solves retain the joint height and auxiliary state and reuse a factorization across the requested right-hand sides. They belong to the SPC uncertainty update, whose cost is separate from the forward planner evaluation.
 
 Sampling indices, point-to-maplet associations, spatial neighborhoods, regional-feature lookup indices, illumination coefficients, and the ray-intersection hierarchy are cached while their dependencies remain unchanged. During one planning call, rotation changes directions and the illumination weights but leaves the sampled body and its encoded features unchanged. Geometry updates invalidate the affected caches; uncertainty updates require refreshing $u_i$, $\mathbf g$, $\mathbf z_i$, and the variance-weighted summaries. Simply allowing time to pass neither changes the body-frame uncertainty map nor justifies reducing its values.
 
-Online inference gathers the current SPC state, encodes the sampled surface once, predicts $K$ phases, evaluates their illumination gates, predicts $K$ positions, and converts these outputs to extrinsics and acquisition times. For fixed feature width, the rotation and weighted-pooling branch costs $O(KM)$; the position head has an input dimension linear in the fixed budget $K$. For $M_v$ verification samples, incidence and view-direction calculations cost $O(KM_v)$, with ray-intersection cost additionally depending on the mesh and acceleration structure. The full mesh is neither rotated nor rendered for a dense hypothetical phase grid. Sampling, uncertainty estimation, and hierarchy construction remain separate costs. Verification may use denser samples near shadow boundaries and uncertain terrain, but finite sampling can still miss small features; point count and verification density require accuracy--latency evaluation.
-
-The first geometrically accepted pair is returned as the next observation proposal, subject to the external execution check. The remaining pairs are tentative and are replaced after the next reconstruction update. If every proposal is rejected, no observation is recommended. A configured uncertainty tolerance may stop acquisition only over the evaluated surface; missing or masked regions do not thereby meet the modeling requirement.
-
-Before acquisition, retain the current uncertainty state. After the acquired image or batch is incorporated into SPC, verify statistical-fit consistency, align the updated surface with the same evaluation locations, and compute $R$ for exactly those acquisitions. The refreshed surface and uncertainty then trigger a new plan. This closes the reconstruction--planning loop without imposing an artificial uncertainty decrease, while preserving the distinction between single-acquisition feedback and complete-sequence training labels.
+With these caches, each planning call encodes the sampled surface once and evaluates the rotation model only at the $K$ predicted phases. For fixed feature width, the rotation and weighted-pooling branch costs $O(KM)$; the position head has an input dimension linear in the fixed budget $K$. For $M_v$ verification samples, incidence and view-direction calculations cost $O(KM_v)$, with ray-intersection cost additionally depending on the mesh and acceleration structure. The full mesh is neither rotated nor rendered for a dense hypothetical phase grid. Sampling, uncertainty estimation, and hierarchy construction remain separate costs. Verification may use denser samples near shadow boundaries and uncertain terrain, but finite sampling can still miss small features; point count and verification density require accuracy--latency evaluation.
